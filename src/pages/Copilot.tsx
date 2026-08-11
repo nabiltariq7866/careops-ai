@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Send, Sparkles, FileText } from "lucide-react";
 import { useStore } from "../store";
-import { Page, Card, Button, Badge } from "../components";
+import { Page, Card, Button, Badge, Select } from "../components";
 import { policyAnswer } from "../services/ai/copilotAI";
 type Context = "Patient" | "Referral" | "Admission" | "Document" | "Policy";
 export function Copilot() {
@@ -101,7 +101,7 @@ export function Copilot() {
           <h2>Context</h2>
           <label>
             Context type
-            <select
+            <Select
               value={context}
               onChange={(e) => change(e.target.value as Context)}
             >
@@ -110,11 +110,11 @@ export function Copilot() {
                   <option key={x}>{x}</option>
                 ),
               )}
-            </select>
+            </Select>
           </label>
           <label>
             Selected record
-            <select
+            <Select
               value={id}
               onChange={(e) => {
                 setId(e.target.value);
@@ -124,7 +124,7 @@ export function Copilot() {
               {options.map(([value, label]) => (
                 <option value={value}>{label}</option>
               ))}
-            </select>
+            </Select>
           </label>
           <h3>Suggested prompts</h3>
           {[

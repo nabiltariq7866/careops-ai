@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Plus, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { addDays, addWeeks, format, startOfWeek } from "date-fns";
 import { useStore } from "../store";
-import { Page, Card, Button, Badge, Modal, Field } from "../components";
+import { Page, Card, Button, Badge, Modal, Field, Select } from "../components";
 import type { Appointment } from "../types";
 import { can } from "../permissions";
 
@@ -181,7 +181,7 @@ export function Appointments() {
                     <small>{a.location}</small>
                   </td>
                   <td>
-                    <select
+                    <Select
                       value={a.status}
                       onChange={(e) =>
                         status(a, e.target.value as Appointment["status"])
@@ -198,7 +198,7 @@ export function Appointments() {
                       ].map((x) => (
                         <option key={x}>{x}</option>
                       ))}
-                    </select>
+                    </Select>
                   </td>
                   <td>{a.reminder || "Not sent"}</td>
                   <td>
@@ -255,7 +255,7 @@ export function Appointments() {
           <form onSubmit={submit}>
             <div className="formgrid">
               <Field label="Patient">
-                <select
+                <Select
                   name="patient"
                   defaultValue={
                     edit?.patientId || params.get("patient") || undefined
@@ -266,21 +266,21 @@ export function Appointments() {
                       {p.firstName} {p.lastName}
                     </option>
                   ))}
-                </select>
+                </Select>
               </Field>
               <Field label="Specialty">
-                <select name="specialty" defaultValue={edit?.specialty}>
+                <Select name="specialty" defaultValue={edit?.specialty}>
                   <option>Cardiology</option>
                   <option>Neurology</option>
                   <option>Respiratory Medicine</option>
-                </select>
+                </Select>
               </Field>
               <Field label="Practitioner">
-                <select name="practitioner" defaultValue={edit?.practitioner}>
+                <Select name="practitioner" defaultValue={edit?.practitioner}>
                   <option>Dr Sarah Wilson</option>
                   <option>Dr Ishan Patel</option>
                   <option>Dr Maya Chen</option>
-                </select>
+                </Select>
               </Field>
               <Field label="Date">
                 <input
@@ -306,20 +306,20 @@ export function Appointments() {
                 />
               </Field>
               <Field label="Appointment type">
-                <select name="type" defaultValue={edit?.type || "Consultation"}>
+                <Select name="type" defaultValue={edit?.type || "Consultation"}>
                   <option>Consultation</option>
                   <option>Follow-up</option>
                   <option>Virtual Care</option>
                   <option>Procedure</option>
-                </select>
+                </Select>
               </Field>
               <Field label="Duration">
-                <select name="duration" defaultValue={edit?.duration || 30}>
+                <Select name="duration" defaultValue={edit?.duration || 30}>
                   <option value="15">15 minutes</option>
                   <option value="30">30 minutes</option>
                   <option value="45">45 minutes</option>
                   <option value="60">60 minutes</option>
-                </select>
+                </Select>
               </Field>
               <Field label="Notes">
                 <textarea name="notes" defaultValue={edit?.notes} rows={3} />

@@ -69,14 +69,21 @@ test("discharge workflow resolves blockers and releases patient", async ({
   await page.goto("/patient-flow");
   await page.getByRole("button", { name: "Discharge", exact: true }).click();
   const card = page.locator("section.card").filter({ hasText: "James Sutton" });
-  for (const select of await card.locator(".checklist select").all())
-    await select.selectOption("Complete");
+  for (const dropdown of await card
+    .locator(".checklist .custom-select-trigger")
+    .all()) {
+    await dropdown.click();
+    await page.getByRole("option", { name: "Complete", exact: true }).click();
+  }
   await card.getByRole("button", { name: "Discharge patient" }).click();
   await expect(card).toHaveCount(0);
 });
 test("safety officer can report and review an ADR", async ({ page }) => {
   await page.goto("/settings");
-  await page.getByLabel("Current role").selectOption("Safety Officer");
+  await page.getByLabel("Current role").click();
+  await page
+    .getByRole("option", { name: "Safety Officer", exact: true })
+    .click();
   await page.goto("/medication");
   await page.getByRole("button", { name: "Report ADR" }).click();
   await page.getByRole("button", { name: /Analyze/ }).click();

@@ -26,6 +26,7 @@ import {
   Field,
   initials,
   Empty,
+  Select,
 } from "../components";
 import type { Patient } from "../types";
 import { can } from "../permissions";
@@ -50,12 +51,12 @@ const patientFields = (p?: Patient) => (
       />
     </Field>
     <Field label="Sex">
-      <select name="sex" defaultValue={p?.sex}>
+      <Select name="sex" defaultValue={p?.sex}>
         <option>Female</option>
         <option>Male</option>
         <option>Non-binary</option>
         <option>Prefer not to say</option>
-      </select>
+      </Select>
     </Field>
     <Field label="Phone">
       <input required name="phone" defaultValue={p?.phone} />
@@ -64,12 +65,12 @@ const patientFields = (p?: Patient) => (
       <input required type="email" name="email" defaultValue={p?.email} />
     </Field>
     <Field label="Preferred language">
-      <select name="language" defaultValue={p?.language || "English"}>
+      <Select name="language" defaultValue={p?.language || "English"}>
         <option>English</option>
         <option>Spanish</option>
         <option>Urdu</option>
         <option>Arabic</option>
-      </select>
+      </Select>
     </Field>
     <Field label="External / National ID">
       <input name="externalId" defaultValue={p?.externalId} />
@@ -167,7 +168,7 @@ export function Patients() {
               placeholder="Search by name or patient ID"
             />
           </div>
-          <select
+          <Select
             aria-label="Status filter"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -177,8 +178,8 @@ export function Patients() {
             <option>Admitted</option>
             <option>Waiting</option>
             <option>Discharged</option>
-          </select>
-          <select
+          </Select>
+          <Select
             aria-label="Ward filter"
             value={ward}
             onChange={(e) => setWard(e.target.value)}
@@ -187,7 +188,7 @@ export function Patients() {
             {[...new Set(store.patients.map((p) => p.ward))].map((x) => (
               <option key={x}>{x}</option>
             ))}
-          </select>
+          </Select>
         </div>
         {filtered.length ? (
           <div className="tablewrap">

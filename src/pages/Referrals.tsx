@@ -2,7 +2,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { FileUp, Plus, Sparkles } from "lucide-react";
 import { useStore } from "../store";
-import { Page, Card, Button, Badge, Modal, Field, AIBox } from "../components";
+import {
+  Page,
+  Card,
+  Button,
+  Badge,
+  Modal,
+  Field,
+  AIBox,
+  Select,
+} from "../components";
 import type { Referral } from "../types";
 import { analyzeReferral } from "../services/ai/referralAI";
 
@@ -221,13 +230,13 @@ export function Referrals() {
             </div>
             <div className="formgrid">
               <Field label="Patient">
-                <select name="patient">
+                <Select name="patient">
                   {s.patients.map((p) => (
                     <option value={p.id}>
                       {p.firstName} {p.lastName}
                     </option>
                   ))}
-                </select>
+                </Select>
               </Field>
               <Field label="Referral source">
                 <input
@@ -237,12 +246,12 @@ export function Referrals() {
                 />
               </Field>
               <Field label="Requested service">
-                <select name="service">
+                <Select name="service">
                   <option>Cardiology</option>
                   <option>Neurology</option>
                   <option>Respiratory Medicine</option>
                   <option>General Medicine</option>
-                </select>
+                </Select>
               </Field>
             </div>
             <div className="modalactions">
@@ -361,19 +370,19 @@ export function Referrals() {
                     <div>
                       <small>Final Staff Decision</small>
                       <Field label="Service">
-                        <select name="service" defaultValue={selected.service}>
+                        <Select name="service" defaultValue={selected.service}>
                           <option>Cardiology</option>
                           <option>Neurology</option>
                           <option>Respiratory Medicine</option>
                           <option>General Medicine</option>
-                        </select>
+                        </Select>
                       </Field>
                       <Field label="Urgency">
-                        <select name="urgency" defaultValue={selected.urgency}>
+                        <Select name="urgency" defaultValue={selected.urgency}>
                           <option>Routine</option>
                           <option>Urgent</option>
                           <option>Critical</option>
-                        </select>
+                        </Select>
                       </Field>
                       <Field label="Missing information (comma separated)">
                         <input

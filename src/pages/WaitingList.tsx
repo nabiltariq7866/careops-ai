@@ -1,8 +1,23 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  MapPin,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 import { useStore } from "../store";
-import { Page, Card, Button, Badge, Modal, AIBox, Field } from "../components";
+import {
+  Page,
+  Card,
+  Button,
+  Badge,
+  Modal,
+  AIBox,
+  Field,
+  Select,
+} from "../components";
 import type { WaitEntry } from "../types";
 import { recommendAppointments, type Slot } from "../services/ai/waitingListAI";
 const fallbackSlots: Slot[] = [
@@ -47,6 +62,14 @@ export function WaitingList() {
       1,
       Math.floor((+new Date("2026-08-11") - +new Date(d)) / 86400000),
     );
+  const slotDate = (date: string) => {
+    const value = new Date(`${date}T12:00:00`);
+    return {
+      day: value.toLocaleDateString("en-GB", { day: "2-digit" }),
+      month: value.toLocaleDateString("en-GB", { month: "short" }),
+      weekday: value.toLocaleDateString("en-GB", { weekday: "short" }),
+    };
+  };
   const assign = () => {
     if (!selected) return;
     const x = slots[slot];
@@ -165,20 +188,64 @@ export function WaitingList() {
             </div>
           ) : (
             <div className="slotlist">
-              {slots.map((x, i) => (
-                <button
-                  className={slot === i ? "selected" : ""}
-                  onClick={() => setSlot(i)}
-                >
-                  <b>
-                    {x.date} · {x.time}
-                  </b>
-                  <span>
-                    {x.practitioner} · {x.location}
-                  </span>
-                  {i === 0 && <Badge tone="ai">AI RECOMMENDED</Badge>}
-                </button>
-              ))}
+              {slots.map((x, i) => {
+                const date = slotDate(x.date);
+                const isSelected = slot === i;
+                return (
+                  <button
+                    type="button"
+                    key={`${x.date}-${x.time}-${x.practitioner}`}
+                    className={`appointment-slot ${isSelected ? "selected" : ""}`}
+                    aria-pressed={isSelected}
+                    onClick={() => setSlot(i)}
+                  >
+                    <span className="slotdate" aria-label={x.date}>
+                      <small>{date.month}</small>
+                      <strong>{date.day}</strong>
+                      <small>{date.weekday}</small>
+                    </span>
+                    <span className="slotdetails">
+                      <span className="slottime">
+                        <Clock3 size={16} />
+                        {x.time}
+                      </span>
+                      <span>
+                        <UserRound size={15} />
+                        {x.practitioner}
+                      </span>
+                      <span>
+                        <MapPin size={15} />
+                        {x.location}
+                      </span>
+                      <span className="slotreasons">
+                        {x.reason.map((reason) => (
+                          <small key={reason}>{reason}</small>
+                        ))}
+                      </span>
+                    </span>
+                    <span className="slotmeta">
+                      {i === 0 && (
+                        <Badge tone="ai">
+                          <Sparkles size={12} /> AI recommended
+                        </Badge>
+                      )}
+                      <strong>{x.score}% match</strong>
+                      <CheckCircle2
+                        className="slotcheck"
+                        size={22}
+                        aria-hidden
+                      />
+                    </span>
+                    <b className="slotlegacy">
+                      {x.date} · {x.time}
+                    </b>
+                    <span className="slotlegacy">
+                      {x.practitioner} · {x.location}
+                    </span>
+                    {i === 0 && <Badge tone="ai">AI RECOMMENDED</Badge>}
+                  </button>
+                );
+              })}
             </div>
           )}
           <div className="modalactions">
@@ -212,12 +279,12 @@ export function WaitingList() {
             }}
           >
             <Field label="Action">
-              <select name="action">
+              <Select name="action">
                 <option>Request missing information</option>
                 <option>Contact patient</option>
                 <option>Confirm availability</option>
                 <option>Escalate breach risk</option>
-              </select>
+              </Select>
             </Field>
             <Field label="Owner">
               <input name="owner" defaultValue="Referral Coordination" />

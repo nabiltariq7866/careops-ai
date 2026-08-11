@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../store";
-import { Page, Card, Badge, Empty } from "../components";
+import { Page, Card, Badge, Empty, Select } from "../components";
 import {
   PieChart,
   Pie,
@@ -62,24 +62,24 @@ export function SafetyAnalytics() {
       <div className="filterbar">
         <label>
           Period
-          <select value={range} onChange={(e) => setRange(e.target.value)}>
+          <Select value={range} onChange={(e) => setRange(e.target.value)}>
             <option value="30">Last 30 days</option>
             <option value="90">Last 90 days</option>
             <option value="365">Last year</option>
-          </select>
+          </Select>
         </label>
         <label>
           Ward
-          <select value={ward} onChange={(e) => setWard(e.target.value)}>
+          <Select value={ward} onChange={(e) => setWard(e.target.value)}>
             <option>All</option>
             {[...new Set(incidents.map((i) => i.ward))].map((x) => (
               <option>{x}</option>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           Severity
-          <select
+          <Select
             value={severity}
             onChange={(e) => setSeverity(e.target.value)}
           >
@@ -87,11 +87,11 @@ export function SafetyAnalytics() {
             <option>Low</option>
             <option>Moderate</option>
             <option>High</option>
-          </select>
+          </Select>
         </label>
         <label>
           Medication
-          <select
+          <Select
             value={medication}
             onChange={(e) => setMedication(e.target.value)}
           >
@@ -99,16 +99,16 @@ export function SafetyAnalytics() {
             {[...new Set(incidents.map((i) => i.medication))].map((x) => (
               <option>{x}</option>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           Type
-          <select value={type} onChange={(e) => setType(e.target.value)}>
+          <Select value={type} onChange={(e) => setType(e.target.value)}>
             <option>All</option>
             {[...new Set(incidents.map((i) => i.type))].map((x) => (
               <option>{x}</option>
             ))}
-          </select>
+          </Select>
         </label>
       </div>
       <div className="summaryrow">
@@ -245,7 +245,7 @@ export function SafetyAnalytics() {
                         </td>
                         <td>{a.due}</td>
                         <td>
-                          <select
+                          <Select
                             aria-label={`Status for ${a.action}`}
                             value={a.status}
                             onChange={(e) => {
@@ -262,7 +262,7 @@ export function SafetyAnalytics() {
                             <option>Open</option>
                             <option>In Progress</option>
                             <option>Completed</option>
-                          </select>
+                          </Select>
                         </td>
                       </tr>
                     ))}

@@ -11,6 +11,7 @@ import {
   Field,
   AIBox,
   Empty,
+  Select,
 } from "../components";
 import type { Admission, Bed } from "../types";
 import { predictDischargeDelay } from "../services/ai/dischargeAI";
@@ -118,7 +119,7 @@ export function PatientFlow() {
                     <td>{t.owner}</td>
                     <td>{t.due}</td>
                     <td>
-                      <select
+                      <Select
                         value={t.status}
                         disabled={!manageFlow}
                         onChange={(e) =>
@@ -128,7 +129,7 @@ export function PatientFlow() {
                         <option>Pending</option>
                         <option>In Progress</option>
                         <option>Completed</option>
-                      </select>
+                      </Select>
                     </td>
                   </tr>
                 ))}
@@ -207,7 +208,7 @@ export function PatientFlow() {
                       >
                         {b.status}
                       </Badge>
-                      <select
+                      <Select
                         value={b.status}
                         disabled={!manageFlow}
                         onChange={(e) => {
@@ -224,7 +225,7 @@ export function PatientFlow() {
                         <option>Blocked</option>
                         <option>Complete</option>
                         <option>Not Required</option>
-                      </select>
+                      </Select>
                     </div>
                   ))}
                 </div>
@@ -246,7 +247,7 @@ export function PatientFlow() {
           onClose={() => setBedEdit(undefined)}
         >
           <Field label="Bed state">
-            <select
+            <Select
               value={bedEdit.status}
               disabled={bedEdit.status === "Occupied"}
               onChange={(e) => {
@@ -263,7 +264,7 @@ export function PatientFlow() {
               <option>Reserved</option>
               <option>Unavailable</option>
               {bedEdit.status === "Occupied" && <option>Occupied</option>}
-            </select>
+            </Select>
           </Field>
           {bedEdit.status === "Occupied" && (
             <p className="notice">
@@ -319,7 +320,7 @@ export function PatientFlow() {
           >
             <div className="formgrid">
               <Field label="Patient">
-                <select name="patient">
+                <Select name="patient">
                   {s.patients
                     .filter((p) => p.status !== "Admitted")
                     .map((p) => (
@@ -327,16 +328,16 @@ export function PatientFlow() {
                         {p.firstName} {p.lastName}
                       </option>
                     ))}
-                </select>
+                </Select>
               </Field>
               <Field label="Available bed">
-                <select name="bed">
+                <Select name="bed">
                   {s.beds
                     .filter((b) => b.status === "Available")
                     .map((b) => (
                       <option key={b.id}>{b.id}</option>
                     ))}
-                </select>
+                </Select>
               </Field>
               <Field label="Consultant">
                 <input name="consultant" defaultValue="Dr Maya Chen" />

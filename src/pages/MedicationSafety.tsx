@@ -1,8 +1,25 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  MapPin,
+  Pill,
+  Plus,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 import { useStore } from "../store";
-import { Page, Card, Button, Badge, Modal, Field, AIBox } from "../components";
+import {
+  Page,
+  Card,
+  Button,
+  Badge,
+  Modal,
+  Field,
+  AIBox,
+  Select,
+} from "../components";
 import type { Incident } from "../types";
 import {
   analyzeMedicationNarrative,
@@ -51,6 +68,7 @@ export function MedicationSafety() {
     }
   };
   const matches = (i: Incident) => findSimilarIncidents(i, s.incidents);
+  const similarMatches = similar ? matches(similar) : [];
   return (
     <Page
       title="Medication & ADR Safety"
@@ -205,13 +223,13 @@ export function MedicationSafety() {
               </Field>
               <div className="formgrid">
                 <Field label="Patient">
-                  <select name="patient">
+                  <Select name="patient">
                     {s.patients.map((p) => (
                       <option value={p.id}>
                         {p.firstName} {p.lastName}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </Field>
                 <Field label="Medication">
                   <input required name="medication" defaultValue="Amlodipine" />
@@ -230,18 +248,18 @@ export function MedicationSafety() {
                   />
                 </Field>
                 <Field label="Classification">
-                  <select name="type">
+                  <Select name="type">
                     <option>Wrong Dose</option>
                     <option>Omitted Dose</option>
                     <option>Wrong Medication</option>
-                  </select>
+                  </Select>
                 </Field>
                 <Field label="Severity">
-                  <select name="severity">
+                  <Select name="severity">
                     <option>Low</option>
                     <option>Moderate</option>
                     <option>High</option>
-                  </select>
+                  </Select>
                 </Field>
                 <Field label="Ward">
                   <input name="ward" defaultValue="Ward 4B" />
@@ -282,7 +300,7 @@ export function MedicationSafety() {
           onClose={() => setReview(undefined)}
         >
           <Field label="Classification">
-            <select
+            <Select
               value={review.type}
               onChange={(e) => {
                 s.reviewIncident(review.id, review.status);
@@ -298,10 +316,10 @@ export function MedicationSafety() {
               <option>Omitted Dose</option>
               <option>Wrong Medication</option>
               <option>Adverse Drug Reaction</option>
-            </select>
+            </Select>
           </Field>
           <Field label="Severity">
-            <select
+            <Select
               value={review.severity}
               onChange={(e) => {
                 useStore.setState((st) => ({
@@ -323,7 +341,7 @@ export function MedicationSafety() {
               <option>Low</option>
               <option>Moderate</option>
               <option>High</option>
-            </select>
+            </Select>
           </Field>
           <div className="modalactions">
             <Button
@@ -371,25 +389,92 @@ export function MedicationSafety() {
           onClose={() => setSimilar(undefined)}
           wide
         >
-          <p>Potential matches use medication, ward and event-type factors.</p>
-          <table>
-            <tbody>
-              {matches(similar).map((i) => (
-                <tr>
-                  <td>
-                    <b>{i.id}</b>
-                  </td>
-                  <td>{i.medication}</td>
-                  <td>{i.ward}</td>
-                  <td>{i.type}</td>
-                  <td>{i.severity}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!matches(similar).length && (
-            <p className="empty">No similar incidents found.</p>
-          )}
+          <div className="similarincidents">
+            <div className="similarintro">
+              <span className="similaricon">
+                <Sparkles size={20} />
+              </span>
+              <div>
+                <h3>{similarMatches.length} potential match found</h3>
+                <p>
+                  Ranked using medication, ward, event type and clinical
+                  severity factors.
+                </p>
+              </div>
+            </div>
+            {similarMatches.length ? (
+              <div className="similargrid">
+                {similarMatches.map((incident) => (
+                  <article className="similarcard" key={incident.id}>
+                    <header>
+                      <div>
+                        <b>{incident.id}</b>
+                        <small>
+                          {new Date(incident.at).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </small>
+                      </div>
+                      <Badge
+                        tone={
+                          incident.severity === "High"
+                            ? "danger"
+                            : incident.severity === "Moderate"
+                              ? "warning"
+                              : "success"
+                        }
+                      >
+                        <AlertTriangle size={12} /> {incident.severity}
+                      </Badge>
+                    </header>
+                    <div className="similarfacts">
+                      <span>
+                        <Pill size={16} />
+                        <small>Medication</small>
+                        <b>{incident.medication}</b>
+                      </span>
+                      <span>
+                        <AlertTriangle size={16} />
+                        <small>Event type</small>
+                        <b>{incident.type}</b>
+                      </span>
+                      <span>
+                        <MapPin size={16} />
+                        <small>Location</small>
+                        <b>{incident.ward}</b>
+                      </span>
+                      <span>
+                        <UserRound size={16} />
+                        <small>Patient</small>
+                        <b>{name(incident.patientId)}</b>
+                      </span>
+                    </div>
+                    <p className="similarnarrative">{incident.narrative}</p>
+                    <footer>
+                      <span>
+                        <CalendarDays size={14} /> {incident.status}
+                      </span>
+                      {safetyReviewer && (
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setSimilar(undefined);
+                            setReview(incident);
+                          }}
+                        >
+                          Review incident
+                        </Button>
+                      )}
+                    </footer>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty">No similar incidents found.</div>
+            )}
+          </div>
         </Modal>
       )}
       {action && (
@@ -418,12 +503,12 @@ export function MedicationSafety() {
           >
             <div className="formgrid">
               <Field label="Potential root cause">
-                <select name="root">
+                <Select name="root">
                   <option>Medication packaging similarity</option>
                   <option>Manual transcription</option>
                   <option>Process issue</option>
                   <option>Training requirement</option>
-                </select>
+                </Select>
               </Field>
               <Field label="Contributing factors">
                 <input name="factors" defaultValue="Evening shift workload" />

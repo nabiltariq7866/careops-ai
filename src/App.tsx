@@ -14,11 +14,10 @@ import {
   Settings,
   Search,
   Bell,
-  ChevronsUpDown,
 } from "lucide-react";
 import { useStore } from "./store";
 import { canAccess } from "./permissions";
-import { Card, Page } from "./components";
+import { Card, Page, Select } from "./components";
 
 const groups = [
   [
@@ -63,6 +62,12 @@ export default function AppLayout() {
   const [search, setSearch] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const visibleGroups = groups
+    .map(
+      ([group, items]) =>
+        [group, items.filter(([, to]) => canAccess(store.role, to))] as const,
+    )
+    .filter(([, items]) => items.length > 0);
   const searchNow = (event: React.FormEvent) => {
     event.preventDefault();
     if (search.trim())
@@ -81,17 +86,15 @@ export default function AppLayout() {
           <Activity />
           Overview
         </NavLink>
-        {groups.map(([group, items]) => (
+        {visibleGroups.map(([group, items]) => (
           <div className="navgroup" key={group}>
             <label>{group}</label>
-            {items
-              .filter(([, to]) => canAccess(store.role, to))
-              .map(([name, to, Icon]) => (
-                <NavLink key={to} to={to}>
-                  <Icon />
-                  {name}
-                </NavLink>
-              ))}
+            {items.map(([name, to, Icon]) => (
+              <NavLink key={to} to={to}>
+                <Icon />
+                {name}
+              </NavLink>
+            ))}
           </div>
         ))}
         <div className="demo">
@@ -102,7 +105,7 @@ export default function AppLayout() {
         <header className="top">
           <label className="facility">
             <HeartPulse />
-            <select
+            <Select
               aria-label="Facility"
               value={store.facility}
               onChange={(e) => store.setFacility(e.target.value)}
@@ -110,8 +113,7 @@ export default function AppLayout() {
               <option>St. Anne Medical Centre</option>
               <option>Riverside Community Hospital</option>
               <option>Northgate Ambulatory Centre</option>
-            </select>
-            <ChevronsUpDown />
+            </Select>
           </label>
           <form className="globalsearch" onSubmit={searchNow}>
             <Search />

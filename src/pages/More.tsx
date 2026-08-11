@@ -11,7 +11,16 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useStore } from "../store";
-import { Page, Card, Button, Badge, AIBox, Modal, Field } from "../components";
+import {
+  Page,
+  Card,
+  Button,
+  Badge,
+  AIBox,
+  Modal,
+  Field,
+  Select,
+} from "../components";
 import { summarizeCohorts } from "../services/ai/populationHealthAI";
 
 export function Population() {
@@ -55,12 +64,12 @@ export function Population() {
       subtitle="Synthetic cohort visibility for proactive operational follow-up."
     >
       <div className="filterbar">
-        <select value={risk} onChange={(e) => setRisk(e.target.value)}>
+        <Select value={risk} onChange={(e) => setRisk(e.target.value)}>
           <option>All</option>
           <option>High</option>
           <option>Medium</option>
-        </select>
-        <select
+        </Select>
+        <Select
           value={department}
           onChange={(e) => setDepartment(e.target.value)}
         >
@@ -68,7 +77,7 @@ export function Population() {
           <option>Cardiology</option>
           <option>Neurology</option>
           <option>General Medicine</option>
-        </select>
+        </Select>
       </div>
       <div className="kpis">
         <Card className="kpi">
@@ -212,7 +221,7 @@ export function Portal() {
             />
           </Field>
           <Field label="Preferred language">
-            <select
+            <Select
               value={p.language}
               onChange={(e) =>
                 s.updatePatient(p.id, { language: e.target.value })
@@ -222,7 +231,7 @@ export function Portal() {
               <option>Spanish</option>
               <option>Urdu</option>
               <option>Arabic</option>
-            </select>
+            </Select>
           </Field>
           <Field label="Address">
             <input
@@ -420,11 +429,11 @@ export function Portal() {
         >
           <form onSubmit={saveAppointment}>
             <Field label="Specialty">
-              <select name="specialty">
+              <Select name="specialty">
                 <option>Cardiology</option>
                 <option>Neurology</option>
                 <option>Respiratory Medicine</option>
-              </select>
+              </Select>
             </Field>
             <Field label="Date">
               <input
@@ -645,7 +654,7 @@ export function SettingsPage() {
           <h2>Role simulation</h2>
           <label className="field">
             <span>Current role</span>
-            <select
+            <Select
               value={s.role}
               onChange={(e) => {
                 s.setRole(e.target.value);
@@ -663,7 +672,7 @@ export function SettingsPage() {
               ].map((x) => (
                 <option key={x}>{x}</option>
               ))}
-            </select>
+            </Select>
           </label>
           <p className="muted">
             Current role is persisted. Patient role emphasizes the portal;
