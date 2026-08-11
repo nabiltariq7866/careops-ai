@@ -5,8 +5,9 @@ export const analyzeMedicationNarrative = (narrative: string) => {
     (x) => x[0],
   );
   const time =
-    narrative.match(/\b(?:[01]?\d|2[0-3])(?::\d{2})?\s?(?:AM|PM)?\b/i)?.[0] ||
-    "Not stated";
+    narrative.match(
+      /\b(?:[01]?\d|2[0-3]):[0-5]\d(?:\s?(?:AM|PM))?\b|\b(?:1[0-2]|0?[1-9])\s?(?:AM|PM)\b/i,
+    )?.[0] || "Not stated";
   return simulate(
     {
       medication:

@@ -105,9 +105,13 @@ export const waiting: WaitEntry[] = [
   {
     id: "W-501",
     patientId: "P-10045",
+    referralId: "R-2399",
     specialty: "Cardiology",
     priority: "Routine",
     since: "2026-08-08",
+    missing: [],
+    targetDays: 28,
+    noShows: 0,
     risk: "Low",
     status: "Waiting",
   },

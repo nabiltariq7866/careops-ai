@@ -423,18 +423,24 @@ export function PatientDetail() {
       subtitle={`${p.id} · ${p.sex} · ${age(p.dob)} years · ${p.ward}`}
       action={
         <div className="actions">
-          <Button onClick={() => navigate(`/appointments?patient=${p.id}`)}>
-            <CalendarPlus />
-            Book appointment
-          </Button>
-          <Button variant="secondary" onClick={() => setModal("task")}>
-            <ClipboardPlus />
-            Add task
-          </Button>
-          <Button variant="secondary" onClick={() => setModal("note")}>
-            <StickyNote />
-            Add note
-          </Button>
+          {can(store.role, "schedule") && (
+            <Button onClick={() => navigate(`/appointments?patient=${p.id}`)}>
+              <CalendarPlus />
+              Book appointment
+            </Button>
+          )}
+          {can(store.role, "add-task") && (
+            <Button variant="secondary" onClick={() => setModal("task")}>
+              <ClipboardPlus />
+              Add task
+            </Button>
+          )}
+          {can(store.role, "add-note") && (
+            <Button variant="secondary" onClick={() => setModal("note")}>
+              <StickyNote />
+              Add note
+            </Button>
+          )}
         </div>
       }
     >

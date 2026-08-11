@@ -22,20 +22,14 @@ import {
   CartesianGrid,
 } from "recharts";
 const trend = [
-    { d: "Mon", flow: 82, wait: 118 },
-    { d: "Tue", flow: 91, wait: 123 },
-    { d: "Wed", flow: 86, wait: 121 },
-    { d: "Thu", flow: 104, wait: 129 },
-    { d: "Fri", flow: 97, wait: 127 },
-    { d: "Sat", flow: 72, wait: 119 },
-    { d: "Today", flow: 94, wait: 124 },
-  ],
-  blocks = [
-    { n: "Pharmacy", v: 4 },
-    { n: "Transport", v: 2 },
-    { n: "Diagnostics", v: 3 },
-    { n: "Community care", v: 1 },
-  ];
+  { d: "Mon", flow: 82, wait: 118 },
+  { d: "Tue", flow: 91, wait: 123 },
+  { d: "Wed", flow: 86, wait: 121 },
+  { d: "Thu", flow: 104, wait: 129 },
+  { d: "Fri", flow: 97, wait: 127 },
+  { d: "Sat", flow: 72, wait: 119 },
+  { d: "Today", flow: 94, wait: 124 },
+];
 export function Overview() {
   const s = useStore();
   const active = s.admissions.filter((a) => a.status === "Active"),
@@ -45,29 +39,93 @@ export function Overview() {
     ).length,
     today = s.appointments.filter((a) => a.date === "2026-08-11").length,
     openInc = s.incidents.filter((i) => i.status !== "Closed").length;
+  const blockerCounts = active
+    .flatMap((admission) => admission.blockers)
+    .filter(
+      (blocker) =>
+        blocker.status !== "Complete" && blocker.status !== "Not Required",
+    )
+    .reduce<Record<string, number>>((counts, blocker) => {
+      counts[blocker.name] = (counts[blocker.name] || 0) + 1;
+      return counts;
+    }, {});
+  const blocks = Object.entries(blockerCounts)
+    .map(([n, v]) => ({ n, v }))
+    .sort((a, b) => b.v - a.v);
+  const waitingSpecialties = new Set(
+    s.waiting
+      .filter((entry) => entry.status === "Waiting")
+      .map((entry) => entry.specialty),
+  ).size;
+  const urgentReferrals = s.referrals.filter(
+    (referral) =>
+      referral.urgency !== "Routine" && referral.status === "Needs Review",
+  );
+  const matchedCancellations = s.appointments.filter(
+    (appointment) =>
+      appointment.status === "Cancelled" &&
+      s.waiting.some(
+        (entry) =>
+          entry.status === "Waiting" &&
+          entry.specialty === appointment.specialty,
+      ),
+  );
+  const attention = [
+    ...(atRisk
+      ? [
+          {
+            tone: "danger",
+            level: "HIGH",
+            title: `${atRisk} active admission${atRisk === 1 ? "" : "s"} have blocked discharge dependencies`,
+            meta:
+              blocks.map((item) => `${item.n} ${item.v}`).join(" Â· ") ||
+              "Clinical coordination required",
+          },
+        ]
+      : []),
+    ...urgentReferrals.slice(0, 1).map((referral) => ({
+      tone: "warning",
+      level: "MEDIUM",
+      title: `${referral.urgency} ${referral.service.toLowerCase()} referral awaiting review`,
+      meta: `${referral.id} Â· ${referral.confidence}% AI confidence`,
+    })),
+    ...(matchedCancellations.length
+      ? [
+          {
+            tone: "info",
+            level: "INFO",
+            title: `${matchedCancellations.length} cancelled slot${matchedCancellations.length === 1 ? "" : "s"} match waiting-list demand`,
+            meta: `${new Set(matchedCancellations.map((item) => item.specialty)).size} matching specialties`,
+          },
+        ]
+      : []),
+  ].slice(0, 3);
   const kpis: [string, number, string, LucideIcon][] = [
     [
       "Patients Waiting",
       s.waiting.filter((w) => w.status === "Waiting").length,
-      "Across 6 specialties",
+      `Across ${waitingSpecialties} ${waitingSpecialties === 1 ? "specialty" : "specialties"}`,
       Users,
     ],
     [
       "Beds Available",
       available,
-      `${s.beds.length - available} currently occupied`,
+      `${s.beds.length - available} not currently available`,
       BedDouble,
     ],
     ["Expected Discharges", active.length, `${atRisk} at risk`, LogOut],
     [
       "Urgent Referrals",
-      s.referrals.filter(
-        (r) => r.urgency !== "Routine" && r.status === "Needs Review",
-      ).length,
+      urgentReferrals.length,
       "Awaiting clinical review",
       FileWarning,
     ],
-    ["Appointments Today", today, "87% clinic utilization", CalendarDays],
+    [
+      "Appointments Today",
+      today,
+      `${Math.min(100, Math.round((today / 8) * 100))}% demo clinic utilization`,
+      CalendarDays,
+    ],
     [
       "Medication Alerts",
       openInc,
@@ -134,19 +192,21 @@ export function Overview() {
         <AIBox title="AI Operational Insight">
           <h3>{atRisk} patients are at risk of delayed discharge</h3>
           <p>
-            Unresolved pharmacy and diagnostics dependencies are the leading
-            contributors across active admissions.
+            {blocks.length
+              ? `${blocks
+                  .slice(0, 2)
+                  .map((item) => item.n)
+                  .join(
+                    " and ",
+                  )} are the leading unresolved contributors across active admissions.`
+              : "No unresolved discharge dependencies are currently recorded."}
           </p>
           <div className="airows">
-            <span>
-              Pharmacy <b>4</b>
-            </span>
-            <span>
-              Diagnostics <b>3</b>
-            </span>
-            <span>
-              Transport <b>2</b>
-            </span>
+            {blocks.slice(0, 3).map((item) => (
+              <span key={item.n}>
+                {item.n} <b>{item.v}</b>
+              </span>
+            ))}
           </div>
           <a href="/patient-flow" className="textlink">
             Review affected patients <ArrowUpRight size={15} />
@@ -179,21 +239,21 @@ export function Overview() {
             </div>
           </div>
           <div className="attention">
-            <div>
-              <Badge tone="danger">HIGH</Badge>
-              <span>Ward 4B discharge blockers require review</span>
-              <small>2 patients · updated 4 min ago</small>
-            </div>
-            <div>
-              <Badge tone="warning">MEDIUM</Badge>
-              <span>Urgent neurology referral awaiting review</span>
-              <small>Received today · 92% AI confidence</small>
-            </div>
-            <div>
-              <Badge tone="info">INFO</Badge>
-              <span>Cardiology cancellation could match waiting list</span>
-              <small>1 suitable patient identified</small>
-            </div>
+            {attention.length ? (
+              attention.map((item) => (
+                <div key={`${item.level}-${item.title}`}>
+                  <Badge tone={item.tone}>{item.level}</Badge>
+                  <span>{item.title}</span>
+                  <small>{item.meta}</small>
+                </div>
+              ))
+            ) : (
+              <div>
+                <Badge tone="success">CLEAR</Badge>
+                <span>No priority operational exceptions</span>
+                <small>Shared workflow state is currently within target.</small>
+              </div>
+            )}
           </div>
         </Card>
       </div>

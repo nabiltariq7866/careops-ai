@@ -76,7 +76,9 @@ export const can = (
     | "archive-patient"
     | "schedule"
     | "report-safety"
-    | "manage-flow",
+    | "manage-flow"
+    | "add-task"
+    | "add-note",
 ) =>
   ({
     "clinical-review": ["Clinician", "Administrator"],
@@ -98,4 +100,13 @@ export const can = (
       "Clinician",
       "Administrator",
     ],
+    "add-task": [
+      "Operations Manager",
+      "Care Coordinator",
+      "Clinician",
+      "Nurse",
+      "Safety Officer",
+      "Administrator",
+    ],
+    "add-note": ["Clinician", "Nurse", "Administrator"],
   })[action].includes(role);

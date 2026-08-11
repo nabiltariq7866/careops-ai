@@ -24,40 +24,80 @@ import {
 import { summarizeCohorts } from "../services/ai/populationHealthAI";
 
 export function Population() {
-  const p = useStore((s) => s.patients);
-  const summary = summarizeCohorts(p.length);
+  const s = useStore();
+  const p = s.patients;
   const [risk, setRisk] = useState("All"),
     [department, setDepartment] = useState("All");
+  const today = "2026-08-11";
+  const overduePatients = p.filter(
+    (patient) =>
+      !s.appointments.some(
+        (appointment) =>
+          appointment.patientId === patient.id &&
+          appointment.status !== "Cancelled" &&
+          appointment.date >= today,
+      ),
+  );
+  const cardiologyPatients = p.filter(
+    (patient) =>
+      s.referrals.some(
+        (referral) =>
+          referral.patientId === patient.id &&
+          referral.service === "Cardiology",
+      ) ||
+      s.appointments.some(
+        (appointment) =>
+          appointment.patientId === patient.id &&
+          appointment.specialty === "Cardiology",
+      ),
+  );
+  const noShowPatients = p.filter((patient) =>
+    s.appointments.some(
+      (appointment) =>
+        appointment.patientId === patient.id &&
+        appointment.status === "No-show",
+    ),
+  );
+  const careGaps =
+    s.tasks.filter((task) => task.status !== "Completed").length +
+    s.referrals.reduce((count, referral) => count + referral.missing.length, 0);
+  const summary = summarizeCohorts({
+    overdue: overduePatients.length,
+    noShow: noShowPatients.length,
+    careGaps,
+  });
   const cohorts = [
     {
-      name: "Diabetes overdue review",
-      patients: 68,
+      name: "Patients without upcoming follow-up",
+      patients: overduePatients.length,
       risk: "High",
       department: "General Medicine",
-      contact: "61+ days",
+      contact: "No future appointment",
       action: "Outreach campaign",
     },
     {
       name: "Cardiology post-discharge",
-      patients: 31,
+      patients: cardiologyPatients.length,
       risk: "Medium",
       department: "Cardiology",
-      contact: "30+ days",
+      contact: "Current shared records",
       action: "Book follow-up",
     },
     {
       name: "Repeated no-shows",
-      patients: 24,
+      patients: noShowPatients.length,
       risk: "High",
       department: "Neurology",
-      contact: "45+ days",
+      contact: "Appointment history",
       action: "Confirm preferences",
     },
-  ].filter(
-    (x) =>
-      (risk === "All" || x.risk === risk) &&
-      (department === "All" || x.department === department),
-  );
+  ]
+    .filter((cohort) => cohort.patients > 0)
+    .filter(
+      (x) =>
+        (risk === "All" || x.risk === risk) &&
+        (department === "All" || x.department === department),
+    );
   return (
     <Page
       title="Population Health"
@@ -83,7 +123,7 @@ export function Population() {
         <Card className="kpi">
           <span>Overdue follow-up</span>
           <strong>{summary.overdue}</strong>
-          <small>12 high priority</small>
+          <small>{overduePatients.length} require outreach review</small>
         </Card>
         <Card className="kpi">
           <span>High no-show cohort</span>
@@ -92,13 +132,22 @@ export function Population() {
         </Card>
         <Card className="kpi">
           <span>Repeated admissions</span>
-          <strong>{p.filter((x) => x.status === "Admitted").length}</strong>
+          <strong>
+            {
+              p.filter(
+                (patient) =>
+                  s.admissions.filter(
+                    (admission) => admission.patientId === patient.id,
+                  ).length > 1,
+              ).length
+            }
+          </strong>
           <small>Last 90 days</small>
         </Card>
         <Card className="kpi">
           <span>Open care gaps</span>
           <strong>{summary.careGaps}</strong>
-          <small>Across 4 pathways</small>
+          <small>Tasks and missing referral items</small>
         </Card>
       </div>
       <AIBox>
@@ -353,18 +402,19 @@ export function Portal() {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              if (file.size > 10 * 1024 * 1024) {
-                toast.error("File exceeds 10 MB");
+              const allowedTypes = [
+                "application/pdf",
+                "image/png",
+                "image/jpeg",
+              ];
+              if (!allowedTypes.includes(file.type)) {
+                toast.error("Only PDF, PNG and JPEG files are supported");
+                e.target.value = "";
                 return;
               }
-              const dataUrl = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result));
-                reader.onerror = () => reject(reader.error);
-                reader.readAsDataURL(file);
-              }).catch(() => "");
-              if (!dataUrl) {
-                toast.error("Document could not be read");
+              if (file.size > 10 * 1024 * 1024) {
+                toast.error("File exceeds 10 MB");
+                e.target.value = "";
                 return;
               }
               s.addDocument({
@@ -374,9 +424,11 @@ export function Portal() {
                 type: "Patient Upload",
                 uploadedAt: new Date().toISOString().slice(0, 10),
                 source: "Patient Portal",
-                dataUrl,
+                size: file.size,
+                mimeType: file.type,
               });
               toast.success(`${file.name} uploaded`);
+              e.target.value = "";
             }}
           />
         </Card>
@@ -450,7 +502,10 @@ export function Portal() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => setBooking(false)}
+                onClick={() => {
+                  setBooking(false);
+                  setReschedule(undefined);
+                }}
               >
                 Cancel
               </Button>
@@ -524,6 +579,95 @@ const resources: Record<string, object> = {
 export function Integrations() {
   const s = useStore();
   const [resource, setResource] = useState("Patient");
+  const patient = s.patients[0];
+  const appointment = s.appointments[0];
+  const admission = s.admissions[0];
+  const task = s.tasks[0];
+  const incident = s.incidents[0];
+  const document = s.documents[0];
+  const latestSync = [...s.integrations]
+    .map((integration) => integration.lastSync)
+    .sort()
+    .at(-1);
+  const liveResources: Record<string, object> = {
+    ...resources,
+    Patient: patient
+      ? {
+          resourceType: "Patient",
+          id: patient.id,
+          identifier: [{ value: patient.externalId || patient.id }],
+          name: [{ family: patient.lastName, given: [patient.firstName] }],
+          birthDate: patient.dob,
+          telecom: [{ system: "phone", value: patient.phone }],
+        }
+      : resources.Patient,
+    Appointment: appointment
+      ? {
+          resourceType: "Appointment",
+          id: appointment.id,
+          status: appointment.status.toLowerCase().replace(" ", "-"),
+          start: `${appointment.date}T${appointment.time}:00`,
+          participant: [
+            { actor: { reference: `Patient/${appointment.patientId}` } },
+            { actor: { display: appointment.practitioner } },
+          ],
+        }
+      : resources.Appointment,
+    Encounter: admission
+      ? {
+          resourceType: "Encounter",
+          id: admission.id,
+          status: admission.status === "Active" ? "in-progress" : "finished",
+          subject: { reference: `Patient/${admission.patientId}` },
+          location: [
+            { location: { display: `${admission.ward} / ${admission.bedId}` } },
+          ],
+        }
+      : resources.Encounter,
+    Task: task
+      ? {
+          resourceType: "Task",
+          id: task.id,
+          status:
+            task.status === "Completed"
+              ? "completed"
+              : task.status === "In Progress"
+                ? "in-progress"
+                : "requested",
+          description: task.title,
+          for: { reference: `Patient/${task.patientId}` },
+        }
+      : resources.Task,
+    Medication: incident
+      ? {
+          resourceType: "Medication",
+          id: `MED-${incident.id}`,
+          code: { text: incident.medication },
+        }
+      : resources.Medication,
+    DocumentReference: document
+      ? {
+          resourceType: "DocumentReference",
+          id: document.id,
+          status: "current",
+          subject: { reference: `Patient/${document.patientId}` },
+          content: [
+            {
+              attachment: {
+                title: document.name,
+                contentType: document.mimeType,
+              },
+            },
+          ],
+        }
+      : resources.DocumentReference,
+    Provenance: {
+      resourceType: "Provenance",
+      id: "PV-demo",
+      recorded: latestSync || new Date().toISOString(),
+      agent: [{ who: { display: "CareOps simulated integration layer" } }],
+    },
+  };
   return (
     <Page
       title="Integrations"
@@ -550,49 +694,53 @@ export function Integrations() {
         </div>
       </Card>
       <div className="integrationgrid">
-        {s.integrations.map(({ id, name: n, kind: t, status: st }) => (
-          <Card key={id}>
-            <div className="integrationicon">
-              <Plug />
-            </div>
-            <h3>{n}</h3>
-            <p>{t}</p>
-            <Badge
-              tone={
-                st === "Connected"
-                  ? "success"
-                  : st === "Attention Required"
-                    ? "warning"
-                    : st === "Syncing"
-                      ? "info"
-                      : ""
-              }
-            >
-              {st}
-            </Badge>
-            <small>Last simulated sync: 2 min ago</small>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const ok = s.updateIntegration(
-                  id,
-                  st === "Connected" ? "Disconnected" : "Connected",
-                );
-                ok
-                  ? toast.success(`${n} demo status updated`)
-                  : toast.error("Administrator role required");
-              }}
-            >
-              {st === "Connected" ? "Disconnect demo" : "Connect demo"}
-            </Button>
-          </Card>
-        ))}
+        {s.integrations.map(
+          ({ id, name: n, kind: t, status: st, lastSync }) => (
+            <Card key={id}>
+              <div className="integrationicon">
+                <Plug />
+              </div>
+              <h3>{n}</h3>
+              <p>{t}</p>
+              <Badge
+                tone={
+                  st === "Connected"
+                    ? "success"
+                    : st === "Attention Required"
+                      ? "warning"
+                      : st === "Syncing"
+                        ? "info"
+                        : ""
+                }
+              >
+                {st}
+              </Badge>
+              <small>
+                Last simulated sync: {new Date(lastSync).toLocaleString()}
+              </small>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  const ok = s.updateIntegration(
+                    id,
+                    st === "Connected" ? "Disconnected" : "Connected",
+                  );
+                  ok
+                    ? toast.success(`${n} demo status updated`)
+                    : toast.error("Administrator role required");
+                }}
+              >
+                {st === "Connected" ? "Disconnect demo" : "Connect demo"}
+              </Button>
+            </Card>
+          ),
+        )}
       </div>
       <div className="grid two">
         <Card>
           <h2>FHIR Resource Explorer</h2>
           <div className="resources">
-            {Object.keys(resources).map((x) => (
+            {Object.keys(liveResources).map((x) => (
               <button
                 key={x}
                 className={resource === x ? "active" : ""}
@@ -602,7 +750,7 @@ export function Integrations() {
               </button>
             ))}
           </div>
-          <pre>{JSON.stringify(resources[resource], null, 2)}</pre>
+          <pre>{JSON.stringify(liveResources[resource], null, 2)}</pre>
         </Card>
         <Card>
           <h2>Integration event log</h2>
