@@ -220,12 +220,17 @@ main {
 }
 .iconbtn i {
   position: absolute;
+  display: grid;
+  place-items: center;
   background: #c84a4a;
   color: white;
   border-radius: 50%;
   font-size: 9px;
-  width: 15px;
-  height: 15px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+  width: 16px;
+  height: 16px;
   right: 0;
   top: 0;
 }

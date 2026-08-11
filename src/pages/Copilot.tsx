@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Send, Sparkles, FileText } from "lucide-react";
 import { useStore } from "../store";
 import { Page, Card, Button, Badge, Select } from "../components";
-import { policyAnswer } from "../services/ai/copilotAI";
+import { answerCopilotPrompt, policyAnswer } from "../services/ai/copilotAI";
 type Context = "Patient" | "Referral" | "Admission" | "Document" | "Policy";
 export function Copilot() {
   const s = useStore();
@@ -72,7 +72,71 @@ export function Copilot() {
           sources: ["Medication Incident Policy · Demo revision 4.1"],
         };
   };
-  const result = response();
+  const baseResult = response();
+  const promptContext = () => {
+    if (context === "Patient") {
+      const record = s.patients.find((item) => item.id === id) || s.patients[0];
+      return {
+        subject: `${record.firstName} ${record.lastName}`,
+        outstanding: s.tasks
+          .filter(
+            (task) =>
+              task.patientId === record.id && task.status !== "Completed",
+          )
+          .map((task) => `${task.title} (${task.status}, due ${task.due})`),
+      };
+    }
+    if (context === "Referral") {
+      const record =
+        s.referrals.find((item) => item.id === id) || s.referrals[0];
+      return {
+        subject: `referral ${record.id}`,
+        outstanding: [
+          ...record.missing.map((item) => `Obtain ${item}`),
+          ...(record.status === "Needs Review"
+            ? ["Complete human referral review"]
+            : []),
+        ],
+      };
+    }
+    if (context === "Admission") {
+      const record =
+        s.admissions.find((item) => item.id === id) || s.admissions[0];
+      return {
+        subject: `admission ${record.id}`,
+        outstanding: record.blockers
+          .filter(
+            (item) =>
+              item.status !== "Complete" && item.status !== "Not Required",
+          )
+          .map((item) => `${item.name} (${item.status})`),
+      };
+    }
+    if (context === "Document") {
+      const record =
+        s.documents.find((item) => item.id === id) || s.documents[0];
+      return {
+        subject: record.name,
+        outstanding: ["Human review of the source document"],
+      };
+    }
+    return {
+      subject:
+        id === "policy-discharge"
+          ? "Discharge Coordination SOP"
+          : "Medication Incident Policy",
+      outstanding: ["Apply the policy with authorized human review"],
+    };
+  };
+  const promptData = promptContext();
+  const result = answerCopilotPrompt({
+    prompt,
+    context,
+    subject: promptData.subject,
+    summary: baseResult.body,
+    outstanding: promptData.outstanding,
+    sources: baseResult.sources,
+  });
   const change = (c: Context) => {
     setContext(c);
     setSent(false);
@@ -131,6 +195,8 @@ export function Copilot() {
             "Summarize this record.",
             "What actions are outstanding?",
             "Draft a handover note.",
+            "Draft a discharge letter.",
+            "Draft a patient communication.",
             "Identify the source-backed facts.",
           ].map((x) => (
             <button

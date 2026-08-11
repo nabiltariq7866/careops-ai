@@ -124,7 +124,7 @@ export function Appointments() {
                 {days.map((day) => (
                   <div
                     key={day.toISOString()}
-                    onDoubleClick={() => setOpen(true)}
+                    onDoubleClick={() => scheduler && setOpen(true)}
                   >
                     {s.appointments
                       .filter(
@@ -381,6 +381,7 @@ export function Appointments() {
             <div className="modalactions">
               <Button
                 variant="secondary"
+                type="button"
                 onClick={() => setReminder(undefined)}
               >
                 Cancel

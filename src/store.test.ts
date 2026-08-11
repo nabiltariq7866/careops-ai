@@ -10,21 +10,34 @@ describe("CareOps interconnected workflows", () => {
     expect(s.referrals.find((r) => r.id === "R-2408")?.status).toBe("Approved");
     expect(s.waiting.length).toBe(before + 1);
   });
+  it("uses the final human referral decision and carries missing data", () => {
+    useStore.getState().updateReferral("R-2408", {
+      service: "Cardiology",
+      urgency: "Critical",
+      missing: ["Recent ECG"],
+    });
+    useStore.getState().approveReferral("R-2408");
+    const entry = useStore
+      .getState()
+      .waiting.find((item) => item.referralId === "R-2408");
+    expect(entry?.specialty).toBe("Cardiology");
+    expect(entry?.priority).toBe("Critical");
+    expect(entry?.missing).toEqual(["Recent ECG"]);
+    expect(entry?.targetDays).toBe(2);
+  });
   it("assigns an appointment and schedules the waiting entry", () => {
     const w = useStore.getState().waiting[0];
-    useStore
-      .getState()
-      .assignAppointment(w.id, {
-        id: "A-test",
-        patientId: w.patientId,
-        practitioner: "Dr Test",
-        specialty: w.specialty,
-        date: "2026-08-20",
-        time: "10:00",
-        location: "Clinic",
-        type: "Review",
-        status: "Scheduled",
-      });
+    useStore.getState().assignAppointment(w.id, {
+      id: "A-test",
+      patientId: w.patientId,
+      practitioner: "Dr Test",
+      specialty: w.specialty,
+      date: "2026-08-20",
+      time: "10:00",
+      location: "Clinic",
+      type: "Review",
+      status: "Scheduled",
+    });
     expect(useStore.getState().waiting.find((x) => x.id === w.id)?.status).toBe(
       "Scheduled",
     );
@@ -64,5 +77,15 @@ describe("CareOps interconnected workflows", () => {
     expect(
       useStore.getState().incidents.find((x) => x.id === "MI-302")?.status,
     ).toBe("Closed");
+  });
+  it("enforces note permissions consistently with visible actions", () => {
+    const patientId = useStore.getState().patients[0].id;
+    const before = useStore.getState().notes.length;
+    useStore.getState().setRole("Safety Officer");
+    useStore.getState().addNote(patientId, "Unauthorized note");
+    expect(useStore.getState().notes).toHaveLength(before);
+    useStore.getState().setRole("Clinician");
+    useStore.getState().addNote(patientId, "Clinician-approved note");
+    expect(useStore.getState().notes).toHaveLength(before + 1);
   });
 });

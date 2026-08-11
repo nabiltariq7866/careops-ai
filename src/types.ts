@@ -44,9 +44,13 @@ export interface Referral {
 export interface WaitEntry {
   id: string;
   patientId: string;
+  referralId?: string;
   specialty: string;
   priority: string;
   since: string;
+  missing?: string[];
+  targetDays?: number;
+  noShows?: number;
   risk: "Low" | "Medium" | "High";
   status: "Waiting" | "Scheduled";
 }
@@ -123,7 +127,8 @@ export interface PatientDocument {
   type: string;
   uploadedAt: string;
   source: string;
-  dataUrl?: string;
+  size?: number;
+  mimeType?: string;
 }
 export interface PatientMessage {
   id: string;

@@ -2,13 +2,16 @@ import { useState } from "react";
 import { Sparkles, Mic, Square, FileCheck2 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore } from "../store";
-import { Page, Card, Button, Badge, AIBox } from "../components";
+import { Page, Card, Button, Badge, AIBox, Select } from "../components";
+import { can } from "../permissions";
 
 export function AIInsights() {
   const s = useStore();
   const [ambient, setAmbient] = useState<
     "idle" | "recording" | "processing" | "draft" | "approved"
   >("idle");
+  const [ambientPatient, setAmbientPatient] = useState(s.patients[0]?.id || "");
+  const clinicalApprover = can(s.role, "clinical-review");
   const delayed = s.admissions.filter(
     (a) =>
       a.status === "Active" && a.blockers.some((b) => b.status === "Blocked"),
@@ -59,6 +62,19 @@ export function AIInsights() {
             </div>
             <Badge tone="ai">DEMO AI</Badge>
           </div>
+          <label className="ambientpatient">
+            Consultation patient
+            <Select
+              value={ambientPatient}
+              onChange={(event) => setAmbientPatient(event.target.value)}
+            >
+              {s.patients.map((patient) => (
+                <option key={patient.id} value={patient.id}>
+                  {patient.firstName} {patient.lastName}
+                </option>
+              ))}
+            </Select>
+          </label>
           {ambient === "idle" && (
             <div className="ambientempty">
               <Mic />
@@ -117,21 +133,25 @@ export function AIInsights() {
                   <Button variant="danger" onClick={() => setAmbient("idle")}>
                     Discard
                   </Button>
-                  <Button
-                    onClick={() => {
-                      s.addNote(
-                        s.patients[0].id,
-                        "Ambient documentation draft approved: Exertional fatigue with improving chest discomfort. History reviewed; investigation results and follow-up remain subject to clinician review.",
-                      );
-                      setAmbient("approved");
-                      toast.success(
-                        "Draft approved and added to patient record",
-                      );
-                    }}
-                  >
-                    <FileCheck2 />
-                    Approve Draft
-                  </Button>
+                  {clinicalApprover ? (
+                    <Button
+                      onClick={() => {
+                        s.addNote(
+                          ambientPatient,
+                          "Ambient documentation draft approved: Exertional fatigue with improving chest discomfort. History reviewed; investigation results and follow-up remain subject to clinician review.",
+                        );
+                        setAmbient("approved");
+                        toast.success(
+                          "Draft approved and added to selected patient record",
+                        );
+                      }}
+                    >
+                      <FileCheck2 />
+                      Approve Draft
+                    </Button>
+                  ) : (
+                    <Badge tone="warning">Clinician approval required</Badge>
+                  )}
                 </div>
               )}
               {ambient === "approved" && (
@@ -149,7 +169,10 @@ export function AIInsights() {
                 <b>Review discharge dependencies for {a.patientId}</b>
                 <p>
                   {a.blockers
-                    .filter((b) => b.status !== "Complete")
+                    .filter(
+                      (b) =>
+                        b.status !== "Complete" && b.status !== "Not Required",
+                    )
                     .map((b) => b.name)
                     .join(", ")}
                 </p>

@@ -62,6 +62,17 @@ export function WaitingList() {
       1,
       Math.floor((+new Date("2026-08-11") - +new Date(d)) / 86400000),
     );
+  const targetDays = (entry: WaitEntry) =>
+    entry.targetDays ??
+    (entry.priority === "Critical" ? 2 : entry.priority === "Urgent" ? 7 : 28);
+  const missingFor = (entry: WaitEntry) =>
+    entry.missing ??
+    s.referrals.find(
+      (referral) =>
+        referral.id === entry.referralId ||
+        (!entry.referralId && referral.patientId === entry.patientId),
+    )?.missing ??
+    [];
   const slotDate = (date: string) => {
     const value = new Date(`${date}T12:00:00`);
     return {
@@ -101,8 +112,10 @@ export function WaitingList() {
               <th>Patient</th>
               <th>Specialty</th>
               <th>Priority</th>
-              <th>Days</th>
+              <th>Wait / target</th>
               <th>Risk</th>
+              <th>Breach</th>
+              <th>No-shows</th>
               <th>Missing info</th>
               <th>Actions</th>
             </tr>
@@ -116,7 +129,10 @@ export function WaitingList() {
                 </td>
                 <td>{w.specialty}</td>
                 <td>{w.priority}</td>
-                <td>{days(w.since)}</td>
+                <td>
+                  <b>{days(w.since)} days</b>
+                  <small>Target {targetDays(w)} days</small>
+                </td>
                 <td>
                   <Badge
                     tone={
@@ -131,7 +147,23 @@ export function WaitingList() {
                   </Badge>
                 </td>
                 <td>
-                  {w.priority === "Urgent" ? "Medication list" : "Complete"}
+                  <Badge
+                    tone={days(w.since) > targetDays(w) ? "danger" : "success"}
+                  >
+                    {days(w.since) > targetDays(w)
+                      ? `${days(w.since) - targetDays(w)}d overdue`
+                      : `${targetDays(w) - days(w.since)}d remaining`}
+                  </Badge>
+                </td>
+                <td>{w.noShows ?? 0}</td>
+                <td>
+                  {missingFor(w).length ? (
+                    <span title={missingFor(w).join(", ")}>
+                      {missingFor(w).join(", ")}
+                    </span>
+                  ) : (
+                    <Badge tone="success">Complete</Badge>
+                  )}
                 </td>
                 <td>
                   <div className="rowactions">

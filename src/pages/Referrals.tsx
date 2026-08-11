@@ -349,12 +349,17 @@ export function Referrals() {
                       urgency: String(f.get("urgency")) as Referral["urgency"],
                       missing: String(f.get("missing"))
                         .split(",")
+                        .map((item) => item.trim())
                         .filter(Boolean),
                     });
                     setSelected({
                       ...selected,
                       service: String(f.get("service")),
                       urgency: String(f.get("urgency")) as Referral["urgency"],
+                      missing: String(f.get("missing"))
+                        .split(",")
+                        .map((item) => item.trim())
+                        .filter(Boolean),
                     });
                     setEditing(false);
                     toast.success("Staff decision saved");

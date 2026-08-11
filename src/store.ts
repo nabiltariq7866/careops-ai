@@ -197,7 +197,7 @@ export const useStore = create<State>()(
       ...initial(),
       addPatient: (p) =>
         set((s) =>
-          ["Operations Manager", "Administrator"].includes(s.role)
+          ["Operations Manager", "Clinician", "Administrator"].includes(s.role)
             ? {
                 patients: [
                   ...s.patients,
@@ -246,36 +246,85 @@ export const useStore = create<State>()(
             : {},
         ),
       addNote: (patientId, body) =>
-        set((s) => ({
-          notes: [
-            {
-              id: crypto.randomUUID(),
-              patientId,
-              body,
-              author: "Maya Chen",
-              at: new Date().toISOString(),
-            },
-            ...s.notes,
-          ],
-          patients: s.patients.map((p) =>
-            p.id === patientId
-              ? {
-                  ...p,
-                  timeline: [event("Note", "Care note added"), ...p.timeline],
-                }
-              : p,
-          ),
-        })),
-      addTask: (task) => set((s) => ({ tasks: [task, ...s.tasks] })),
+        set((s) =>
+          ["Clinician", "Nurse", "Administrator"].includes(s.role)
+            ? {
+                notes: [
+                  {
+                    id: crypto.randomUUID(),
+                    patientId,
+                    body,
+                    author: "Maya Chen",
+                    at: new Date().toISOString(),
+                  },
+                  ...s.notes,
+                ],
+                patients: s.patients.map((p) =>
+                  p.id === patientId
+                    ? {
+                        ...p,
+                        timeline: [
+                          event("Note", "Care note added"),
+                          ...p.timeline,
+                        ],
+                      }
+                    : p,
+                ),
+              }
+            : {},
+        ),
+      addTask: (task) =>
+        set((s) =>
+          [
+            "Operations Manager",
+            "Care Coordinator",
+            "Clinician",
+            "Nurse",
+            "Safety Officer",
+            "Administrator",
+          ].includes(s.role)
+            ? { tasks: [task, ...s.tasks] }
+            : {},
+        ),
       updateTask: (id, status) =>
-        set((s) => ({
-          tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)),
-        })),
-      addReferral: (r) => set((s) => ({ referrals: [r, ...s.referrals] })),
+        set((s) =>
+          [
+            "Operations Manager",
+            "Care Coordinator",
+            "Clinician",
+            "Administrator",
+          ].includes(s.role)
+            ? {
+                tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)),
+              }
+            : {},
+        ),
+      addReferral: (r) =>
+        set((s) =>
+          [
+            "Operations Manager",
+            "Care Coordinator",
+            "Clinician",
+            "Administrator",
+          ].includes(s.role)
+            ? { referrals: [r, ...s.referrals] }
+            : {},
+        ),
       updateReferral: (id, p) =>
-        set((s) => ({
-          referrals: s.referrals.map((r) => (r.id === id ? { ...r, ...p } : r)),
-        })),
+        set((s) =>
+          [
+            "Operations Manager",
+            "Care Coordinator",
+            "Clinician",
+            "Administrator",
+          ].includes(s.role)
+            ? {
+                referrals: s.referrals.map((r) =>
+                  r.id === id ? { ...r, ...p } : r,
+                ),
+              }
+            : {},
+        ),
       approveReferral: (id) =>
         set((s) => {
           if (
@@ -294,15 +343,40 @@ export const useStore = create<State>()(
               x.id === id ? { ...x, status: "Approved" } : x,
             ),
             waiting: s.waiting.some((x) => x.patientId === r.patientId)
-              ? s.waiting
+              ? s.waiting.map((entry) =>
+                  entry.patientId === r.patientId
+                    ? {
+                        ...entry,
+                        referralId: r.id,
+                        specialty: r.service,
+                        priority: r.urgency,
+                        missing: r.missing,
+                        targetDays:
+                          r.urgency === "Critical"
+                            ? 2
+                            : r.urgency === "Urgent"
+                              ? 7
+                              : 28,
+                      }
+                    : entry,
+                )
               : [
                   ...s.waiting,
                   {
                     id: `W-${500 + s.waiting.length + 1}`,
                     patientId: r.patientId,
-                    specialty: r.suggested,
+                    referralId: r.id,
+                    specialty: r.service,
                     priority: r.urgency,
                     since: new Date().toISOString().slice(0, 10),
+                    missing: r.missing,
+                    targetDays:
+                      r.urgency === "Critical"
+                        ? 2
+                        : r.urgency === "Urgent"
+                          ? 7
+                          : 28,
+                    noShows: 0,
                     risk: r.urgency === "Critical" ? "High" : "Medium",
                     status: "Waiting",
                   },
@@ -511,7 +585,24 @@ export const useStore = create<State>()(
         set((s) => ({ alerts: s.alerts.map((a) => ({ ...a, read: true })) })),
       reset: () => set(initial()),
     }),
-    { name: "careops-demo-v1" },
+    {
+      name: "careops-demo-v1",
+      merge: (persisted, current) => {
+        const stored = persisted as Partial<State>;
+        const documents = (
+          (stored.documents || current.documents) as Array<
+            PatientDocument & { dataUrl?: string }
+          >
+        ).map(({ dataUrl: _discarded, ...document }) => document);
+        return { ...current, ...stored, documents };
+      },
+      partialize: (state) => ({
+        ...state,
+        documents: (
+          state.documents as Array<PatientDocument & { dataUrl?: string }>
+        ).map(({ dataUrl: _discarded, ...document }) => document),
+      }),
+    },
   ),
 );
 export const patientName = (id: string) => {

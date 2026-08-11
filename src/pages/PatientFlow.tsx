@@ -179,14 +179,21 @@ export function PatientFlow() {
                   <i style={{ width: `${ready(a)}%` }} />
                 </div>
                 {tab === "Discharge" &&
-                  a.blockers.some((b) => b.status !== "Complete") && (
+                  a.blockers.some(
+                    (b) =>
+                      b.status !== "Complete" && b.status !== "Not Required",
+                  ) && (
                     <AIBox title="AI Delay Prediction">
                       <p>
                         {predictDischargeDelay(a).risk} delay risk (
                         {predictDischargeDelay(a).confidence}% confidence).
                         Likely blockers:{" "}
                         {a.blockers
-                          .filter((b) => b.status !== "Complete")
+                          .filter(
+                            (b) =>
+                              b.status !== "Complete" &&
+                              b.status !== "Not Required",
+                          )
                           .map((b) => b.name)
                           .join(", ")}
                         .

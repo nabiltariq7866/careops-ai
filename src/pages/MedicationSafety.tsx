@@ -26,6 +26,10 @@ import {
   findSimilarIncidents,
 } from "../services/ai/medicationSafetyAI";
 import { can } from "../permissions";
+type IncidentDraft = Omit<Incident, "id" | "status" | "at"> & {
+  extractedTime: string;
+  harm: string;
+};
 export function MedicationSafety() {
   const s = useStore();
   const safetyReviewer = can(s.role, "safety-review");
@@ -33,7 +37,8 @@ export function MedicationSafety() {
     [step, setStep] = useState(0),
     [review, setReview] = useState<Incident>(),
     [similar, setSimilar] = useState<Incident>(),
-    [action, setAction] = useState<Incident>();
+    [action, setAction] = useState<Incident>(),
+    [draft, setDraft] = useState<IncidentDraft>();
   const name = (id: string) => {
     const p = s.patients.find((x) => x.id === id);
     return p ? `${p.firstName} ${p.lastName}` : "Unknown";
@@ -46,18 +51,22 @@ export function MedicationSafety() {
       const extracted = await analyzeMedicationNarrative(
         String(f.get("narrative")),
       );
-      s.addIncident({
-        id: `${report === "ADR" ? "ADR" : "MI"}-${crypto.randomUUID().slice(0, 5)}`,
+      setDraft({
         patientId: String(f.get("patient")),
         medication: extracted.medication || String(f.get("medication")),
         prescribed: extracted.prescribed || String(f.get("prescribed")),
         administered: extracted.administered || String(f.get("administered")),
-        type: report === "ADR" ? "Adverse Drug Reaction" : extracted.type,
-        severity: extracted.severity,
+        type:
+          report === "ADR"
+            ? "Adverse Drug Reaction"
+            : extracted.type === "Medication Event"
+              ? String(f.get("type"))
+              : extracted.type,
+        severity: String(f.get("severity")) as Incident["severity"],
         ward: String(f.get("ward")),
         narrative: String(f.get("narrative")),
-        status: "Awaiting Safety Review",
-        at: new Date().toISOString(),
+        extractedTime: extracted.time,
+        harm: extracted.harm,
       });
       setStep(2);
     } catch {
@@ -66,6 +75,33 @@ export function MedicationSafety() {
         description: "You can submit the structured form manually.",
       });
     }
+  };
+  const confirmDraft = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!draft || !report) return;
+    const f = new FormData(e.currentTarget);
+    s.addIncident({
+      id: `${report === "ADR" ? "ADR" : "MI"}-${crypto.randomUUID().slice(0, 5)}`,
+      patientId: draft.patientId,
+      medication: String(f.get("medication")),
+      prescribed: String(f.get("prescribed")),
+      administered: String(f.get("administered")),
+      type: String(f.get("type")),
+      severity: String(f.get("severity")) as Incident["severity"],
+      ward: String(f.get("ward")),
+      narrative: String(f.get("narrative")),
+      status: "Awaiting Safety Review",
+      at: new Date().toISOString(),
+    });
+    setReport(undefined);
+    setDraft(undefined);
+    setStep(0);
+    toast.success(`${report} submitted for safety review`);
+  };
+  const closeReport = () => {
+    setReport(undefined);
+    setDraft(undefined);
+    setStep(0);
   };
   const matches = (i: Incident) => findSimilarIncidents(i, s.incidents);
   const similarMatches = similar ? matches(similar) : [];
@@ -80,6 +116,7 @@ export function MedicationSafety() {
               onClick={() => {
                 setReport("Incident");
                 setStep(0);
+                setDraft(undefined);
               }}
             >
               <Plus />
@@ -90,6 +127,7 @@ export function MedicationSafety() {
               onClick={() => {
                 setReport("ADR");
                 setStep(0);
+                setDraft(undefined);
               }}
             >
               Report ADR
@@ -202,11 +240,7 @@ export function MedicationSafety() {
         </table>
       </Card>
       {report && (
-        <Modal
-          title={`Report ${report}`}
-          onClose={() => setReport(undefined)}
-          wide
-        >
+        <Modal title={`Report ${report}`} onClose={closeReport} wide>
           {step < 2 ? (
             <form onSubmit={submit}>
               <Field label="Narrative">
@@ -248,10 +282,16 @@ export function MedicationSafety() {
                   />
                 </Field>
                 <Field label="Classification">
-                  <Select name="type">
+                  <Select
+                    name="type"
+                    defaultValue={
+                      report === "ADR" ? "Adverse Drug Reaction" : "Wrong Dose"
+                    }
+                  >
                     <option>Wrong Dose</option>
                     <option>Omitted Dose</option>
                     <option>Wrong Medication</option>
+                    <option>Adverse Drug Reaction</option>
                   </Select>
                 </Field>
                 <Field label="Severity">
@@ -266,31 +306,83 @@ export function MedicationSafety() {
                 </Field>
               </div>
               <div className="modalactions">
-                <Button>
+                <Button variant="secondary" type="button" onClick={closeReport}>
+                  Cancel
+                </Button>
+                <Button disabled={step === 1}>
                   <Sparkles />
-                  Analyze & submit
+                  {step === 1 ? "Analyzing narrativeâ€¦" : "Analyze narrative"}
                 </Button>
               </div>
             </form>
           ) : (
-            <>
+            <form onSubmit={confirmDraft}>
               <AIBox title="AI Extraction">
                 <p>
-                  {report} details extracted and classified. Similar-record
-                  checking completed.
+                  Review and edit every extracted field before this {report}
+                  is added to the safety record.
                 </p>
+                <div className="extractionmeta">
+                  <span>
+                    Event time<b>{draft?.extractedTime}</b>
+                  </span>
+                  <span>
+                    Harm assessment<b>{draft?.harm}</b>
+                  </span>
+                </div>
               </AIBox>
-              <div className="modalactions">
-                <Button
-                  onClick={() => {
-                    setReport(undefined);
-                    toast.success(`${report} submitted for safety review`);
-                  }}
-                >
-                  Confirm extraction
-                </Button>
+              <Field label="Narrative">
+                <textarea
+                  required
+                  name="narrative"
+                  rows={3}
+                  defaultValue={draft?.narrative}
+                />
+              </Field>
+              <div className="formgrid">
+                <Field label="Medication">
+                  <input
+                    required
+                    name="medication"
+                    defaultValue={draft?.medication}
+                  />
+                </Field>
+                <Field label="Ward">
+                  <input required name="ward" defaultValue={draft?.ward} />
+                </Field>
+                <Field label="Prescribed">
+                  <input name="prescribed" defaultValue={draft?.prescribed} />
+                </Field>
+                <Field label="Administered / exposure">
+                  <input
+                    name="administered"
+                    defaultValue={draft?.administered}
+                  />
+                </Field>
+                <Field label="Classification">
+                  <Select name="type" defaultValue={draft?.type}>
+                    <option>Wrong Dose</option>
+                    <option>Omitted Dose</option>
+                    <option>Wrong Medication</option>
+                    <option>Medication Event</option>
+                    <option>Adverse Drug Reaction</option>
+                  </Select>
+                </Field>
+                <Field label="Severity">
+                  <Select name="severity" defaultValue={draft?.severity}>
+                    <option>Low</option>
+                    <option>Moderate</option>
+                    <option>High</option>
+                  </Select>
+                </Field>
               </div>
-            </>
+              <div className="modalactions">
+                <Button variant="secondary" type="button" onClick={closeReport}>
+                  Discard draft
+                </Button>
+                <Button type="submit">Confirm & submit</Button>
+              </div>
+            </form>
           )}
         </Modal>
       )}
