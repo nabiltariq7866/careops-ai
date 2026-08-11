@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
@@ -14,6 +14,8 @@ import {
   Settings,
   Search,
   Bell,
+  Menu,
+  X,
 } from "lucide-react";
 import { useStore } from "./store";
 import { canAccess } from "./permissions";
@@ -62,6 +64,7 @@ export default function AppLayout() {
   const [search, setSearch] = useState("");
   const [showAlerts, setShowAlerts] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [mobileNav, setMobileNav] = useState(false);
   const visibleGroups = groups
     .map(
       ([group, items]) =>
@@ -73,14 +76,46 @@ export default function AppLayout() {
     if (search.trim())
       navigate(`/search?q=${encodeURIComponent(search.trim())}`);
   };
+  useEffect(() => setMobileNav(false), [location.pathname]);
+  useEffect(() => {
+    if (!mobileNav) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileNav(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileNav]);
   return (
     <div className="app">
-      <aside>
-        <div className="brand">
-          <span>+</span>
-          <div>
-            CareOps AI<small>Clinical Operations</small>
+      {mobileNav && (
+        <button
+          type="button"
+          className="sidebarbackdrop"
+          aria-label="Close navigation"
+          onClick={() => setMobileNav(false)}
+        />
+      )}
+      <aside className={mobileNav ? "mobile-open" : ""}>
+        <div className="sidebarhead">
+          <div className="brand">
+            <span>+</span>
+            <div>
+              CareOps AI<small>Clinical Operations</small>
+            </div>
           </div>
+          <button
+            type="button"
+            className="sidebarclose"
+            aria-label="Close navigation"
+            onClick={() => setMobileNav(false)}
+          >
+            <X />
+          </button>
         </div>
         <NavLink className="overview" to="/" end>
           <Activity />
@@ -103,6 +138,15 @@ export default function AppLayout() {
       </aside>
       <main>
         <header className="top">
+          <button
+            type="button"
+            className="mobilemenu"
+            aria-label="Open navigation"
+            aria-expanded={mobileNav}
+            onClick={() => setMobileNav(true)}
+          >
+            <Menu />
+          </button>
           <label className="facility">
             <HeartPulse />
             <Select
@@ -147,6 +191,7 @@ export default function AppLayout() {
                 </header>
                 {store.alerts.map((a) => (
                   <button
+                    key={a.id}
                     onClick={() => {
                       navigate(a.href);
                       setShowAlerts(false);
