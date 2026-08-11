@@ -92,6 +92,16 @@ aside {
   width: 248px;
   height: 100vh;
   overflow: auto;
+  z-index: 30;
+}
+.sidebarhead {
+  display: flex;
+  align-items: flex-start;
+}
+.mobilemenu,
+.sidebarclose,
+.sidebarbackdrop {
+  display: none;
 }
 .brand {
   display: flex;
@@ -1599,12 +1609,58 @@ pre {
     display: block;
   }
   aside {
-    position: static;
-    width: 100%;
-    height: auto;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(300px, 86vw);
+    height: 100dvh;
+    z-index: 51;
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition:
+      transform 0.24s ease,
+      visibility 0.24s ease;
+    box-shadow: 16px 0 40px rgba(9, 28, 43, 0.2);
+  }
+  aside.mobile-open {
+    visibility: visible;
+    transform: translateX(0);
   }
   .navgroup {
-    display: none;
+    display: block;
+  }
+  .mobilemenu,
+  .sidebarclose {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: none;
+    border: 1px solid #d7e2e8;
+    border-radius: 8px;
+    background: #fff;
+    color: #17344d;
+  }
+  .mobilemenu svg,
+  .sidebarclose svg {
+    width: 20px;
+  }
+  .sidebarclose {
+    margin: 0 4px 0 auto;
+    border-color: #38566f;
+    background: #1b3a55;
+    color: #fff;
+  }
+  .sidebarhead .brand {
+    flex: 1;
+  }
+  .sidebarbackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border: 0;
+    background: rgba(10, 29, 43, 0.48);
+    cursor: default;
   }
   main {
     grid-column: auto;
@@ -1612,6 +1668,9 @@ pre {
   .top {
     padding: 0 12px;
     gap: 8px;
+  }
+  .facility .custom-select {
+    width: min(205px, calc(100vw - 138px));
   }
   .globalsearch,
   .profile,
@@ -1629,10 +1688,13 @@ pre {
   .portalrow {
     gap: 8px;
   }
-  .content,
   .card {
     max-width: 100%;
     overflow-x: auto;
+  }
+  .content {
+    max-width: 100%;
+    overflow-x: visible;
   }
   .portalhero {
     gap: 12px;
@@ -1661,6 +1723,114 @@ pre {
   }
   .bedgrid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .top {
+    height: 60px;
+    padding: 0 8px;
+    gap: 7px;
+  }
+  .mobilemenu,
+  .sidebarclose {
+    width: 34px;
+    height: 34px;
+  }
+  .facility > svg {
+    display: none;
+  }
+  .facility .custom-select {
+    width: min(190px, calc(100vw - 116px));
+  }
+  .facility .custom-select-trigger span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .popover {
+    position: fixed;
+    top: 56px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+  }
+  .content {
+    width: 100%;
+    padding: 14px 12px;
+    overflow-x: hidden;
+  }
+  .pagehead {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .pagehead h1 {
+    font-size: 23px;
+  }
+  .pagehead p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .card {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .kpis,
+  .summaryrow,
+  .integrationgrid,
+  .bedgrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .kpi {
+    min-height: 108px;
+  }
+  .filterbar,
+  .toolbar,
+  .viewbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filterbar .custom-select,
+  .toolbar .custom-select,
+  .toolbar .search {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+  .toolbar .search {
+    flex: 0 0 auto;
+    min-height: 38px;
+    height: 38px;
+  }
+  .updated {
+    margin-top: -8px;
+    text-align: left;
+  }
+  .aibox {
+    padding: 14px;
+  }
+  .card > table {
+    min-width: 620px;
+  }
+  .modal {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+  }
+  .overlay {
+    padding: 12px;
+  }
+  .modal > header {
+    padding: 15px 16px;
+  }
+  .modal > form,
+  .modal > div:not(.aibox),
+  .modal > .aibox,
+  .modal > .field,
+  .modal > .notice,
+  .modal > .modalactions {
+    margin-left: 16px;
+    margin-right: 16px;
   }
 }
 /* Accessible custom dropdown */
@@ -1786,10 +1956,18 @@ td .custom-select {
 }
 
 @media (max-width: 720px) {
+  .facility .custom-select {
+    width: min(205px, calc(100vw - 138px));
+  }
   .toolbar .search,
   .toolbar .custom-select,
   .filterbar .custom-select {
     width: 100%;
     max-width: none;
+  }
+  .toolbar .search {
+    flex: none;
+    min-height: 38px;
+    height: 38px;
   }
 }

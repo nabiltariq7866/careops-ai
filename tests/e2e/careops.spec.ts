@@ -172,6 +172,8 @@ test("responsive layouts render at portfolio target widths", async ({
     { width: 1280, height: 800, path: "/" },
     { width: 834, height: 1194, path: "/portal" },
     { width: 390, height: 844, path: "/portal" },
+    { width: 320, height: 700, path: "/population" },
+    { width: 250, height: 667, path: "/population" },
   ]) {
     await page.setViewportSize({ width: target.width, height: target.height });
     await page.goto(target.path);
@@ -184,5 +186,22 @@ test("responsive layouts render at portfolio target widths", async ({
       ),
       `viewport ${target.width} on ${target.path}`,
     ).toBe(true);
+    expect(
+      await page.locator(".content").evaluate((node) => node.scrollLeft),
+    ).toBe(0);
   }
+});
+test("mobile burger opens and closes the sidebar navigation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const sidebar = page.locator("aside");
+  await expect(sidebar).not.toBeVisible();
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await expect(sidebar).toBeVisible();
+  await page.getByRole("link", { name: "Patients", exact: true }).click();
+  await expect(page).toHaveURL(/\/patients$/);
+  await expect(sidebar).not.toBeVisible();
+  await expect(page.locator(".toolbar .search")).toHaveCSS("height", "38px");
 });
