@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Plus, ChevronLeft, ChevronRight, Send } from "lucide-react";
-import { addDays, addWeeks, format, startOfWeek } from "date-fns";
+import { addDays, format, startOfWeek } from "date-fns";
 import { useStore } from "../store";
 import { Page, Card, Button, Badge, Modal, Field, Select } from "../components";
 import type { Appointment } from "../types";
@@ -90,8 +90,8 @@ export function Appointments() {
         </div>
         <div className="datecontrol">
           <button
-            aria-label="Previous week"
-            onClick={() => setWeek(addWeeks(week, -1))}
+            aria-label="Previous 5 days"
+            onClick={() => setWeek(addDays(week, -5))}
           >
             <ChevronLeft />
           </button>
@@ -99,8 +99,8 @@ export function Appointments() {
             {format(days[0], "d MMM")}–{format(days[4], "d MMM yyyy")}
           </b>
           <button
-            aria-label="Next week"
-            onClick={() => setWeek(addWeeks(week, 1))}
+            aria-label="Next 5 days"
+            onClick={() => setWeek(addDays(week, 5))}
           >
             <ChevronRight />
           </button>

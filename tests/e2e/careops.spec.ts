@@ -131,6 +131,15 @@ test("non-scheduler cannot open booking by double-click", async ({ page }) => {
   await page.locator(".calrow > div").first().dblclick();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
+test("appointment calendar advances in continuous five-day ranges", async ({
+  page,
+}) => {
+  await page.goto("/appointments");
+  await expect(page.getByText("10 Aug–14 Aug 2026")).toBeVisible();
+  await page.getByRole("button", { name: "Next 5 days" }).click();
+  await expect(page.getByText("15 Aug–19 Aug 2026")).toBeVisible();
+  await expect(page.getByText("Sat 15")).toBeVisible();
+});
 test("portal reschedule Cancel closes the modal", async ({ page }) => {
   await page.goto("/settings");
   await page.getByLabel("Current role").click();
