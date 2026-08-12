@@ -140,7 +140,7 @@ export function SafetyAnalytics() {
       </div>
       {filtered.length ? (
         <>
-          <div className="grid two">
+          <div className="grid two safetyanalyticsgrid">
             <Card>
               <h2>Incidents by severity</h2>
               <ResponsiveContainer width="100%" height={250}>
@@ -177,7 +177,7 @@ export function SafetyAnalytics() {
               </ResponsiveContainer>
             </Card>
           </div>
-          <div className="grid two">
+          <div className="grid two safetyanalyticsgrid">
             <Card>
               <h2>Incidents by ward</h2>
               <ResponsiveContainer width="100%" height={220}>
@@ -203,7 +203,7 @@ export function SafetyAnalytics() {
               </ResponsiveContainer>
             </Card>
           </div>
-          <div className="grid two">
+          <div className="grid two safetyanalyticsgrid">
             <Card>
               <h2>Safety trend</h2>
               <ResponsiveContainer width="100%" height={230}>
@@ -219,15 +219,23 @@ export function SafetyAnalytics() {
             <Card>
               <h2>Corrective actions</h2>
               {actions.length ? (
-                <table>
-                  <tbody>
-                    {actions.map((a) => (
-                      <tr key={a.id}>
-                        <td>
+                <div className="correctiveactionlist">
+                  {actions.map((a) => (
+                    <article className="correctiveaction" key={a.id}>
+                      <div className="correctiveactionhead">
+                        <div>
                           <b>{a.action}</b>
                           <small>{a.rootCause}</small>
-                        </td>
-                        <td>
+                        </div>
+                        <Badge
+                          tone={a.status === "Completed" ? "success" : "warning"}
+                        >
+                          {a.status}
+                        </Badge>
+                      </div>
+                      <div className="correctiveactionfields">
+                        <label>
+                          <span>Owner</span>
                           <input
                             aria-label={`Owner for ${a.action}`}
                             value={a.owner}
@@ -242,9 +250,13 @@ export function SafetyAnalytics() {
                                 return;
                             }}
                           />
-                        </td>
-                        <td>{a.due}</td>
-                        <td>
+                        </label>
+                        <label>
+                          <span>Due date</span>
+                          <strong>{a.due}</strong>
+                        </label>
+                        <label>
+                          <span>Status</span>
                           <Select
                             aria-label={`Status for ${a.action}`}
                             value={a.status}
@@ -263,11 +275,11 @@ export function SafetyAnalytics() {
                             <option>In Progress</option>
                             <option>Completed</option>
                           </Select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </label>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               ) : (
                 <Empty text="No corrective actions match the current demo state." />
               )}

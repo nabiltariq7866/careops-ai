@@ -397,10 +397,75 @@ main {
   gap: 18px;
 }
 .grid.two {
-  grid-template-columns: 1.55fr 1fr;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
 }
 .grid.thirds {
   grid-template-columns: repeat(3, 1fr);
+}
+.safetyanalyticsgrid > .card {
+  min-width: 0;
+}
+.correctiveactionlist {
+  display: grid;
+  gap: 12px;
+}
+.correctiveaction {
+  padding: 14px;
+  border: 1px solid #dce5ea;
+  border-radius: 9px;
+  background: #f8fafb;
+}
+.correctiveactionhead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e2e9ed;
+}
+.correctiveactionhead > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.correctiveactionhead b {
+  overflow-wrap: anywhere;
+}
+.correctiveactionhead small {
+  color: #667784;
+  line-height: 1.35;
+}
+.correctiveactionfields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+.correctiveactionfields label:first-child {
+  grid-column: 1 / -1;
+}
+.correctiveactionfields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.correctiveactionfields label > span {
+  color: #667784;
+  font-size: 11px;
+  font-weight: 600;
+}
+.correctiveactionfields strong {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.correctiveactionfields input,
+.correctiveactionfields .custom-select {
+  width: 100%;
+  min-width: 0;
 }
 .cardhead,
 .flowhead {
@@ -1684,6 +1749,9 @@ pre {
   .flowboard {
     grid-template-columns: 1fr;
   }
+  .safetyanalyticsgrid {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 1500px) and (min-width: 851px) {
   .kpis {
@@ -1867,6 +1935,12 @@ pre {
   .bedgrid {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+  .correctiveactionfields {
+    grid-template-columns: 1fr;
+  }
+  .correctiveactionhead {
+    flex-wrap: wrap;
   }
   .kpi {
     min-height: 108px;
