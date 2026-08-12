@@ -1550,6 +1550,29 @@ pre {
   border-top: 1px solid #e5ebee;
   padding: 9px 0;
 }
+.portalappointment {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+}
+.portalappointment > span {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  line-height: 1.3;
+}
+.portalappointment > span b,
+.portalappointment > span small {
+  display: block;
+}
+.portalappointment > span small {
+  color: #667784;
+}
+.portalappointment .rowactions {
+  width: 100%;
+  justify-content: flex-end;
+  gap: 8px;
+}
 .message {
   background: #f1f6f8;
   padding: 12px;

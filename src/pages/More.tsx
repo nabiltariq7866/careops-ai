@@ -337,7 +337,7 @@ export function Portal() {
             <h2>Appointments</h2>
           </div>
           {appointments.map((ap) => (
-            <div className="portalrow" key={ap.id}>
+            <div className="portalrow portalappointment" key={ap.id}>
               <span>
                 <b>
                   {ap.date} · {ap.time}
