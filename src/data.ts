@@ -200,7 +200,7 @@ export const incidents: Incident[] = [
     severity: "Moderate",
     ward: "Ward 4B",
     narrative: "Dose discrepancy identified after administration.",
-    status: "Approved",
+    status: "Closed",
     at: "2026-07-28T20:15:00",
   },
 ];

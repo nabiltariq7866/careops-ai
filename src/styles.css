@@ -852,6 +852,35 @@ tbody tr:hover {
   color: #26323d;
   font-size: 13px;
 }
+.reviewstatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8ec;
+  border-radius: 9px;
+  background: #f7f9fa;
+}
+.reviewstatus div {
+  display: grid;
+  gap: 4px;
+}
+.reviewstatus small {
+  color: #667784;
+}
+.reviewstatus b {
+  font-size: 14px;
+}
+.reviewstatus.approved {
+  border-color: #bfe1d2;
+  background: #f1faf6;
+}
+.reviewstatus.awaiting-safety-review {
+  border-color: #ebd49c;
+  background: #fff9ed;
+}
 @media (max-width: 480px) {
   .extractionmeta {
     grid-template-columns: 1fr;
@@ -1436,6 +1465,18 @@ pre {
 }
 .portalhero h2 {
   margin: 0;
+}
+.portalcardtitle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+.portalcardtitle h2 {
+  margin: 0;
+}
+.portalcardtitle svg {
+  flex: 0 0 auto;
 }
 .portalrow {
   display: flex;

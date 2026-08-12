@@ -221,7 +221,9 @@ export function MedicationSafety() {
                   <div className="rowactions">
                     {safetyReviewer && (
                       <Button variant="secondary" onClick={() => setReview(i)}>
-                        Review
+                        {i.status === "Awaiting Safety Review"
+                          ? "Review"
+                          : "View details"}
                       </Button>
                     )}
                     <Button variant="secondary" onClick={() => setSimilar(i)}>
@@ -391,9 +393,31 @@ export function MedicationSafety() {
           title={`Safety Review · ${review.id}`}
           onClose={() => setReview(undefined)}
         >
+          <div
+            className={`reviewstatus ${review.status.toLowerCase().replaceAll(" ", "-")}`}
+          >
+            <div>
+              <small>Current review status</small>
+              <b>{review.status}</b>
+            </div>
+            <Badge
+              tone={
+                review.status === "Approved"
+                  ? "success"
+                  : review.status === "Closed"
+                    ? ""
+                    : "warning"
+              }
+            >
+              {review.status === "Awaiting Safety Review"
+                ? "Action required"
+                : review.status}
+            </Badge>
+          </div>
           <Field label="Classification">
             <Select
               value={review.type}
+              disabled={review.status !== "Awaiting Safety Review"}
               onChange={(e) => {
                 s.reviewIncident(review.id, review.status);
                 useStore.setState((st) => ({
@@ -413,6 +437,7 @@ export function MedicationSafety() {
           <Field label="Severity">
             <Select
               value={review.severity}
+              disabled={review.status !== "Awaiting Safety Review"}
               onChange={(e) => {
                 useStore.setState((st) => ({
                   incidents: st.incidents.map((i) =>
@@ -436,42 +461,54 @@ export function MedicationSafety() {
             </Select>
           </Field>
           <div className="modalactions">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                s.addTask({
-                  id: crypto.randomUUID(),
-                  patientId: review.patientId,
-                  title: `More information required for ${review.id}`,
-                  owner: "Reporting Nurse",
-                  due: "2026-08-13",
-                  status: "Pending",
-                  category: "Safety Review",
-                });
-                toast.success("Information request created");
-                setReview(undefined);
-              }}
-            >
-              Request information
-            </Button>
-            <Button
-              onClick={() => {
-                s.reviewIncident(review.id, "Approved");
-                toast.success("Safety review approved");
-                setReview(undefined);
-              }}
-            >
-              Approve
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                s.reviewIncident(review.id, "Closed");
-                setReview(undefined);
-              }}
-            >
-              Close
-            </Button>
+            {review.status === "Awaiting Safety Review" && (
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    s.addTask({
+                      id: crypto.randomUUID(),
+                      patientId: review.patientId,
+                      title: `More information required for ${review.id}`,
+                      owner: "Reporting Nurse",
+                      due: "2026-08-13",
+                      status: "Pending",
+                      category: "Safety Review",
+                    });
+                    toast.success("Information request created");
+                    setReview(undefined);
+                  }}
+                >
+                  Request information
+                </Button>
+                <Button
+                  onClick={() => {
+                    s.reviewIncident(review.id, "Approved");
+                    toast.success("Safety review approved");
+                    setReview(undefined);
+                  }}
+                >
+                  Approve review
+                </Button>
+              </>
+            )}
+            {review.status === "Approved" && (
+              <Button
+                variant="danger"
+                onClick={() => {
+                  s.reviewIncident(review.id, "Closed");
+                  toast.success("Incident review closed");
+                  setReview(undefined);
+                }}
+              >
+                Close case
+              </Button>
+            )}
+            {review.status === "Closed" && (
+              <Button variant="secondary" onClick={() => setReview(undefined)}>
+                Done
+              </Button>
+            )}
           </div>
         </Modal>
       )}

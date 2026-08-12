@@ -332,8 +332,10 @@ export function Portal() {
       </Card>
       <div className="grid thirds">
         <Card>
-          <CalendarDays />
-          <h2>Appointments</h2>
+          <div className="portalcardtitle">
+            <CalendarDays />
+            <h2>Appointments</h2>
+          </div>
           {appointments.map((ap) => (
             <div className="portalrow" key={ap.id}>
               <span>
@@ -363,10 +365,12 @@ export function Portal() {
           ))}
         </Card>
         <Card>
-          <FileText />
-          <h2>Forms</h2>
+          <div className="portalcardtitle">
+            <FileText />
+            <h2>Forms</h2>
+          </div>
           {forms.map((f) => (
-            <div className="portalrow">
+            <div className="portalrow" key={f.id}>
               <span>{f.name}</span>
               {f.status === "Completed" ? (
                 <Badge tone="success">Completed</Badge>
@@ -385,8 +389,10 @@ export function Portal() {
           ))}
         </Card>
         <Card>
-          <Upload />
-          <h2>Documents</h2>
+          <div className="portalcardtitle">
+            <Upload />
+            <h2>Documents</h2>
+          </div>
           {docs.map((d) => (
             <div className="portalrow">
               <span>
@@ -434,11 +440,13 @@ export function Portal() {
         </Card>
       </div>
       <Card>
-        <h2>
-          <MessageSquare /> Secure messages
-        </h2>
+        <div className="portalcardtitle">
+          <MessageSquare />
+          <h2>Secure messages</h2>
+        </div>
         {messages.map((m) => (
           <div
+            key={m.id}
             className={`message ${m.sender === "Patient" ? "patientmsg" : ""}`}
           >
             <b>{m.sender}</b>
