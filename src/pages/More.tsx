@@ -394,7 +394,7 @@ export function Portal() {
             <h2>Documents</h2>
           </div>
           {docs.map((d) => (
-            <div className="portalrow">
+            <div className="portalrow portaldocument" key={d.id}>
               <span>
                 {d.name}
                 <small>{d.uploadedAt}</small>
@@ -402,6 +402,7 @@ export function Portal() {
             </div>
           ))}
           <input
+            className="portalupload"
             aria-label="Upload document"
             type="file"
             accept=".pdf,.png,.jpg,.jpeg"
