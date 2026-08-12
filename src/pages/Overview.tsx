@@ -221,11 +221,20 @@ export function Overview() {
               <p>Open dependencies by service</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={blocks} layout="vertical">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart
+              data={blocks}
+              layout="vertical"
+              margin={{ top: 4, right: 12, bottom: 4, left: 18 }}
+            >
               <CartesianGrid strokeDasharray="3 3" horizontal={false} />
               <XAxis type="number" />
-              <YAxis dataKey="n" type="category" width={100} />
+              <YAxis
+                dataKey="n"
+                type="category"
+                width={112}
+                tick={{ fontSize: 12 }}
+              />
               <Tooltip />
               <Bar dataKey="v" fill="#2a8c82" radius={[0, 4, 4, 0]} />
             </BarChart>
