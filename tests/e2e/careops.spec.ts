@@ -140,6 +140,18 @@ test("appointment calendar advances in continuous five-day ranges", async ({
   await expect(page.getByText("15 Aug–19 Aug 2026")).toBeVisible();
   await expect(page.getByText("Sat 15")).toBeVisible();
 });
+test("appointment list only shows records in the displayed date range", async ({
+  page,
+}) => {
+  await page.goto("/appointments");
+  await page.getByRole("button", { name: "List", exact: true }).click();
+  await expect(page.getByText("2026-08-13 · 09:00")).toBeVisible();
+  await page.getByRole("button", { name: "Next 5 days" }).click();
+  await expect(page.getByText("2026-08-13 · 09:00")).toHaveCount(0);
+  await expect(
+    page.getByText(/No appointments scheduled between 15 Aug/),
+  ).toBeVisible();
+});
 test("portal reschedule Cancel closes the modal", async ({ page }) => {
   await page.goto("/settings");
   await page.getByLabel("Current role").click();

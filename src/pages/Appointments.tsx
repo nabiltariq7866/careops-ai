@@ -4,7 +4,16 @@ import { toast } from "sonner";
 import { Plus, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { addDays, format, startOfWeek } from "date-fns";
 import { useStore } from "../store";
-import { Page, Card, Button, Badge, Modal, Field, Select } from "../components";
+import {
+  Page,
+  Card,
+  Button,
+  Badge,
+  Modal,
+  Field,
+  Select,
+  Empty,
+} from "../components";
 import type { Appointment } from "../types";
 import { can } from "../permissions";
 
@@ -20,6 +29,13 @@ export function Appointments() {
     ),
     [reminder, setReminder] = useState<Appointment>();
   const days = Array.from({ length: 5 }, (_, i) => addDays(week, i));
+  const rangeStart = format(days[0], "yyyy-MM-dd");
+  const rangeEnd = format(days[4], "yyyy-MM-dd");
+  const rangeAppointments = s.appointments
+    .filter((appointment) => {
+      return appointment.date >= rangeStart && appointment.date <= rangeEnd;
+    })
+    .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
   const name = (id: string) => {
     const p = s.patients.find((x) => x.id === id);
     return p ? `${p.firstName} ${p.lastName}` : "Unknown";
@@ -154,93 +170,99 @@ export function Appointments() {
         </Card>
       ) : (
         <Card>
-          <table>
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Date & time</th>
-                <th>Practitioner</th>
-                <th>Service</th>
-                <th>Status</th>
-                <th>Reminder</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {s.appointments.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <b>{name(a.patientId)}</b>
-                  </td>
-                  <td>
-                    {a.date} · {a.time}
-                  </td>
-                  <td>{a.practitioner}</td>
-                  <td>
-                    {a.specialty}
-                    <small>{a.location}</small>
-                  </td>
-                  <td>
-                    <Select
-                      value={a.status}
-                      onChange={(e) =>
-                        status(a, e.target.value as Appointment["status"])
-                      }
-                    >
-                      {[
-                        "Scheduled",
-                        "Confirmed",
-                        "Arrived",
-                        "In Progress",
-                        "Completed",
-                        "No-show",
-                        "Cancelled",
-                      ].map((x) => (
-                        <option key={x}>{x}</option>
-                      ))}
-                    </Select>
-                  </td>
-                  <td>{a.reminder || "Not sent"}</td>
-                  <td>
-                    <div className="rowactions">
-                      {scheduler && (
-                        <>
-                          <Button
-                            variant="secondary"
-                            onClick={() => setReminder(a)}
-                          >
-                            <Send />
-                            Send
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            onClick={() => setEdit(a)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="danger"
-                            onClick={() => {
-                              const reason = prompt("Cancellation reason");
-                              if (reason !== null) {
-                                s.updateAppointment(a.id, {
-                                  status: "Cancelled",
-                                  cancelReason: reason || "Not provided",
-                                });
-                                toast.success("Appointment cancelled");
-                              }
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </td>
+          {rangeAppointments.length ? (
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Date & time</th>
+                  <th>Practitioner</th>
+                  <th>Service</th>
+                  <th>Status</th>
+                  <th>Reminder</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rangeAppointments.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <b>{name(a.patientId)}</b>
+                    </td>
+                    <td>
+                      {a.date} · {a.time}
+                    </td>
+                    <td>{a.practitioner}</td>
+                    <td>
+                      {a.specialty}
+                      <small>{a.location}</small>
+                    </td>
+                    <td>
+                      <Select
+                        value={a.status}
+                        onChange={(e) =>
+                          status(a, e.target.value as Appointment["status"])
+                        }
+                      >
+                        {[
+                          "Scheduled",
+                          "Confirmed",
+                          "Arrived",
+                          "In Progress",
+                          "Completed",
+                          "No-show",
+                          "Cancelled",
+                        ].map((x) => (
+                          <option key={x}>{x}</option>
+                        ))}
+                      </Select>
+                    </td>
+                    <td>{a.reminder || "Not sent"}</td>
+                    <td>
+                      <div className="rowactions">
+                        {scheduler && (
+                          <>
+                            <Button
+                              variant="secondary"
+                              onClick={() => setReminder(a)}
+                            >
+                              <Send />
+                              Send
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              onClick={() => setEdit(a)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              onClick={() => {
+                                const reason = prompt("Cancellation reason");
+                                if (reason !== null) {
+                                  s.updateAppointment(a.id, {
+                                    status: "Cancelled",
+                                    cancelReason: reason || "Not provided",
+                                  });
+                                  toast.success("Appointment cancelled");
+                                }
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <Empty
+              text={`No appointments scheduled between ${format(days[0], "d MMM")} and ${format(days[4], "d MMM yyyy")}.`}
+            />
+          )}
         </Card>
       )}
       {(open || edit) && (
