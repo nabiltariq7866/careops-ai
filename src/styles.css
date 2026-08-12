@@ -643,7 +643,7 @@ tbody tr:hover {
   position: fixed;
   inset: 0;
   background: #10283c99;
-  z-index: 20;
+  z-index: 100;
   display: grid;
   place-items: center;
   padding: 20px;
