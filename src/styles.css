@@ -831,6 +831,32 @@ tbody tr:hover {
   color: #26323d;
   margin-top: 4px;
 }
+.extractionmeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.extractionmeta span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid #e2dceb;
+  border-radius: 8px;
+  background: #fff;
+  color: #667784;
+  font-size: 12px;
+}
+.extractionmeta b {
+  color: #26323d;
+  font-size: 13px;
+}
+@media (max-width: 480px) {
+  .extractionmeta {
+    grid-template-columns: 1fr;
+  }
+}
 .alternatives {
   display: flex;
   flex-direction: column;
